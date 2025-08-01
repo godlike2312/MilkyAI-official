@@ -590,6 +590,20 @@ function setTheme(theme) {
     }
     
     localStorage.setItem('theme', theme);
+    
+    // Update CodeMirror theme if editor is open
+    const canvas = document.getElementById('canvas-editor-container');
+    if (canvas && canvas.classList.contains('open')) {
+        const cm = canvas.querySelector('.CodeMirror');
+        if (cm && cm.CodeMirror) {
+            const newEditorTheme = theme === 'light' ? 'default' : 'monokai';
+            cm.CodeMirror.setOption('theme', newEditorTheme);
+        }
+    }
+    
+    // Dispatch custom event for theme change
+    const themeChangeEvent = new CustomEvent('themeChanged', { detail: { theme: theme } });
+    document.dispatchEvent(themeChangeEvent);
 }
 
 // Function to set the voice
