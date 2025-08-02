@@ -794,11 +794,22 @@ def chat():
                         "content": user_input
                     }
                 ]
-            
-            together_data = json.dumps({
+            # Add temperature and other parameters for deep thinking
+            together_params = {
                 "model": selected_model_info['id'],
                 "messages": messages
-            })
+            }
+            
+            # Add temperature for deep thinking mode
+            if deep_thinking_mode and selected_model_info.get('supports_deep_thinking', False):
+                together_params["temperature"] = 0.9
+                together_params["max_tokens"] = 2000  # Allow longer responses for deep thinking
+                
+                # Modify the last user message to include deep thinking instruction
+                if messages and messages[-1]['role'] == 'user':
+                    messages[-1]['content'] = f"IMPORTANT: You MUST respond with the deep thinking format. User query: {messages[-1]['content']}"
+            
+            together_data = json.dumps(together_params)
             try:
                 print(f"[Together] Sending POST to https://api.together.xyz/v1/chat/completions with data: {together_data}")
                 together_response = requests.post(
@@ -935,7 +946,6 @@ Now, let me think about this carefully... [Go through your reasoning process - c
 What if... [Think about potential issues, edge cases, alternative solutions, or different perspectives on the problem]
 
 For the best answer, I should... [Plan how to organize the response, what examples to include, what format would be most helpful]
-
 Based on my analysis, the best approach is... [Summarize your thinking and explain why this approach makes sense]
 
 
@@ -965,11 +975,17 @@ CRITICAL RULES:
 19. DO NOT include template placeholders like [FIRST:], [SECOND:], etc. - replace them with your actual thinking
 20. Write your thinking process naturally without using numbered steps or template markers"""
             
+            # Modify user input for deep thinking mode
+            modified_user_input = user_input
+            if deep_thinking_mode and selected_model_info.get('supports_deep_thinking', False):
+                modified_user_input = f"IMPORTANT: You MUST respond with the deep thinking format. User query: {user_input}"
+            
             cohere_data = json.dumps({
                 "model": selected_model_info['id'],
-                "message": user_input,
+                "message": modified_user_input,
                 "chat_history": cohere_messages,
-                "preamble": preamble
+                "preamble": preamble,
+                "temperature": 0.9 if deep_thinking_mode and selected_model_info.get('supports_deep_thinking', False) else 0.3
             })
             try:
                 print(f"[Cohere] Sending POST to https://api.cohere.ai/v1/chat with data: {cohere_data}")
@@ -1126,13 +1142,24 @@ CRITICAL RULES:
                         }
                     ]
                 
-                request_data = json.dumps({
+                # Add temperature and other parameters for deep thinking
+                request_params = {
                     "model": model,
                     "messages": messages,
                     "response_format": {
                         "type": "text"
                     }
-                })
+                
+                # Add temperature for deep thinking mode
+                if deep_thinking_mode and selected_model_info.get('supports_deep_thinking', False):
+                    request_params["temperature"] = 0.9
+                    request_params["max_tokens"] = 2000  # Allow longer responses for deep thinking
+                    
+                    # Modify the last user message to include deep thinking instruction
+                    if messages and messages[-1]['role'] == 'user':
+                        messages[-1]['content'] = f"IMPORTANT: You MUST respond with the deep thinking format. User query: {messages[-1]['content']}"
+                
+                request_data = json.dumps(request_params)
                 
                 print(f"Sending request to model {model} with retry mechanism")
                 try:
@@ -1190,9 +1217,12 @@ CRITICAL RULES:
                     
                     # Validate chat history to ensure each message has a valid role
                     valid_messages = []
+                    system_prompt = get_system_prompt(selected_model_info, deep_thinking_mode)
+                    print(f"[Groq] Model supports deep thinking: {selected_model_info.get('supports_deep_thinking', False)}")
+                    print(f"[Groq] Selected system prompt type: {'Deep Thinking' if deep_thinking_mode and selected_model_info.get('supports_deep_thinking', False) else 'Default'}")
                     default_system_message = {
                         "role": "system",
-                        "content": "You are NumAI, a helpful assistant . When a user says only 'hello', respond with just 'Hello! How can I help you today?' and nothing more. For all other queries, respond normally with appropriate markdown formatting: **bold text** for titles, backticks for code, and proper code blocks with language specification. use the actual native emoji characters (e.g. 😊, ❤️, 🚀) instead of emoji shortcodes like :smile: or :heart:. Avoid markdown-style emoji codes. Use emojis directly as Unicode characters. but dont add them starting of your responses. When providing code examples, make it clear these are standalone examples."
+                        "content": system_prompt
                     }
                     
                     if chat_history:
@@ -1239,10 +1269,22 @@ CRITICAL RULES:
                     
                     print(f"[Groq] Using validated messages: {json.dumps(valid_messages)}")
                     
-                    groq_data = json.dumps({
+                    # Add temperature and other parameters for deep thinking
+                    groq_params = {
                         "model": selected_model_info['id'],
                         "messages": valid_messages
-                    })
+                    }
+                    
+                    # Add temperature for deep thinking mode
+                    if deep_thinking_mode and selected_model_info.get('supports_deep_thinking', False):
+                        groq_params["temperature"] = 0.9
+                        groq_params["max_tokens"] = 2000  # Allow longer responses for deep thinking
+                        
+                        # Modify the last user message to include deep thinking instruction
+                        if valid_messages and valid_messages[-1]['role'] == 'user':
+                            valid_messages[-1]['content'] = f"IMPORTANT: You MUST respond with the deep thinking format. User query: {valid_messages[-1]['content']}"
+                    
+                    groq_data = json.dumps(groq_params)
                     
                     try:
                         print(f"[Groq] Sending request to Groq API with model: {selected_model_info['id']}")
