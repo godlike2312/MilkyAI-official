@@ -859,6 +859,10 @@ function addMessage(content, type, isOfflineMessage = false, modelId = null) {
     const messageDiv = document.createElement('div');
     messageDiv.classList.add('message', type);
     
+    // Add timestamp for consistent deep thinking container IDs
+    const timestamp = Date.now();
+    messageDiv.setAttribute('data-timestamp', timestamp);
+    
     // Store original content as a data attribute for potential reprocessing
     if (type === 'assistant') {
         // Ensure we're storing the raw content before any processing
@@ -1629,8 +1633,11 @@ async function sendMessage(message) {
                 const deepthinkContainer = document.createElement('div');
                 deepthinkContainer.className = 'deepthink-container';
                 
-                // Generate unique ID for this container
-                const containerId = 'deepthink-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+                // Generate unique ID for this container - use content-based ID for consistency
+                const messageContent = messageDiv.querySelector('.message-content');
+                const contentText = messageContent ? messageContent.textContent.substring(0, 200) : '';
+                const contentHash = btoa(contentText).replace(/[^a-zA-Z0-9]/g, '').substring(0, 12);
+                const containerId = 'deepthink-' + contentHash;
                 deepthinkContainer.id = containerId;
                 
                 const deepthinkHeader = document.createElement('div');
@@ -1673,18 +1680,20 @@ async function sendMessage(message) {
                 deepthinkContainer.appendChild(deepthinkHeader);
                 deepthinkContainer.appendChild(deepthinkContent);
                 
-                // Restore saved state from localStorage (default to expanded)
+                // Restore saved state from localStorage
                 console.log('sendMessage: Container ID:', containerId);
-                const key = `deepthink-${containerId}`;
+                const key = containerId;
                 const savedState = localStorage.getItem(key);
                 console.log('sendMessage: Saved state from localStorage:', key, '=', savedState);
                 if (savedState === 'collapsed') {
                     deepthinkContainer.classList.add('collapsed');
                     console.log('sendMessage: Applied collapsed state to container');
+                } else if (savedState === null) {
+                    console.log('sendMessage: No saved state found, defaulting to expanded');
+                    deepthinkContainer.classList.remove('collapsed');
                 } else {
-                    console.log('sendMessage: No saved state or expanded, keeping open by default');
+                    console.log('sendMessage: Saved state is expanded, keeping open');
                 }
-                // If no saved state or 'expanded', keep it open by default
                 
                 // Add the deepthink container to the message
                 messageContent.appendChild(deepthinkContainer);
@@ -4480,12 +4489,25 @@ function styleDeepThinkingResponse(messageContent) {
             return marked.parse(text, { renderer });
         };
         
-        // Generate unique ID for this container
-        const containerId = 'deepthink-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+        // Generate unique ID for this container - use content-based ID for consistency
+        const contentHash = btoa(originalContent.substring(0, 200)).replace(/[^a-zA-Z0-9]/g, '').substring(0, 12);
+        const containerId = 'deepthink-' + contentHash;
+        
+        console.log('=== styleDeepThinkingResponse DEBUG START ===');
+        console.log('Content hash:', contentHash);
+        console.log('Generated container ID:', containerId);
+        
+        // Check if there's a saved state for this container
+        const savedState = localStorage.getItem(containerId);
+        const isCollapsed = savedState === 'collapsed';
+        
+        console.log('Saved state from localStorage:', savedState);
+        console.log('Is collapsed:', isCollapsed);
+        console.log('Container will be created with collapsed class:', isCollapsed);
         
         // Create the new deepthink container design
         const styledContent = `
-            <div class="deepthink-container" id="${containerId}">
+            <div class="deepthink-container ${isCollapsed ? 'collapsed' : ''}" id="${containerId}">
                 <div class="deepthink-header" onclick="toggleDeepThink(this.parentElement)">
                     <div class="deepthink-icon">
                         <svg width="16" height="16" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg">
@@ -4521,24 +4543,29 @@ function styleDeepThinkingResponse(messageContent) {
         // Verify the content was replaced
         console.log('After replacement, messageContent.innerHTML length:', messageContent.innerHTML.length);
         
-        // Restore saved state from localStorage (default to expanded)
+        // Restore saved state from localStorage
         const deepthinkContainer = messageContent.querySelector('.deepthink-container');
         if (deepthinkContainer) {
             console.log('Found deepthink container after replacement');
             console.log('Container ID:', containerId);
-            const key = `deepthink-${containerId}`;
-            const savedState = localStorage.getItem(key);
-            console.log('Saved state from localStorage:', key, '=', savedState);
-            if (savedState === 'collapsed') {
-                deepthinkContainer.classList.add('collapsed');
-                console.log('Applied collapsed state to container');
+            console.log('Container element:', deepthinkContainer);
+            console.log('Container classList after creation:', deepthinkContainer.classList.toString());
+            console.log('Initial collapsed state:', isCollapsed);
+            
+            // If no saved state exists, default to expanded (open)
+            if (savedState === null) {
+                console.log('No saved state found, defaulting to expanded');
+                deepthinkContainer.classList.remove('collapsed');
+                console.log('ClassList after removing collapsed:', deepthinkContainer.classList.toString());
             } else {
-                console.log('No saved state or expanded, keeping open by default');
+                console.log('Applied saved state:', savedState);
+                console.log('Final classList:', deepthinkContainer.classList.toString());
             }
-            // If no saved state or 'expanded', keep it open by default
         } else {
             console.log('No deepthink container found after replacement');
         }
+        
+        console.log('=== styleDeepThinkingResponse DEBUG END ===');
     } else {
         console.log('Failed to parse deep thinking response, using fallback approach');
         
@@ -4710,12 +4737,27 @@ function styleDeepThinkingResponseFallback(messageContent) {
             return marked.parse(text, { renderer });
         };
         
-        // Generate unique ID for this container
-        const containerId = 'deepthink-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+        // Generate unique ID for this container - use a more consistent approach
+        const messageDiv = messageContent.closest('.message');
+        // Use content-based ID for consistency
+        const contentHash = btoa(originalContent.substring(0, 200)).replace(/[^a-zA-Z0-9]/g, '').substring(0, 12);
+        const containerId = 'deepthink-' + contentHash;
+        
+        console.log('=== styleDeepThinkingResponseFallback DEBUG START ===');
+        console.log('Content hash:', contentHash);
+        console.log('Generated container ID:', containerId);
+        
+        // Check if there's a saved state for this container
+        const savedState = localStorage.getItem(containerId);
+        const isCollapsed = savedState === 'collapsed';
+        
+        console.log('Saved state from localStorage:', savedState);
+        console.log('Is collapsed:', isCollapsed);
+        console.log('Container will be created with collapsed class:', isCollapsed);
         
         // Create the new deepthink container design
         const styledContent = `
-            <div class="deepthink-container" id="${containerId}">
+            <div class="deepthink-container ${isCollapsed ? 'collapsed' : ''}" id="${containerId}">
                 <div class="deepthink-header" onclick="toggleDeepThink(this.parentElement)">
                     <div class="deepthink-icon">
                         <svg width="16" height="16" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg">
@@ -4748,24 +4790,29 @@ function styleDeepThinkingResponseFallback(messageContent) {
         // Verify the content was replaced
         console.log('After replacement, messageContent.innerHTML length:', messageContent.innerHTML.length);
         
-        // Restore saved state from localStorage (default to expanded)
+        // Restore saved state from localStorage
         const deepthinkContainer = messageContent.querySelector('.deepthink-container');
         if (deepthinkContainer) {
             console.log('Found deepthink container after replacement (fallback)');
             console.log('Container ID:', containerId);
-            const key = `deepthink-${containerId}`;
-            const savedState = localStorage.getItem(key);
-            console.log('Saved state from localStorage:', key, '=', savedState);
-            if (savedState === 'collapsed') {
-                deepthinkContainer.classList.add('collapsed');
-                console.log('Applied collapsed state to container (fallback)');
+            console.log('Container element:', deepthinkContainer);
+            console.log('Container classList after creation:', deepthinkContainer.classList.toString());
+            console.log('Initial collapsed state:', isCollapsed);
+            
+            // If no saved state exists, default to expanded (open)
+            if (savedState === null) {
+                console.log('No saved state found, defaulting to expanded (fallback)');
+                deepthinkContainer.classList.remove('collapsed');
+                console.log('ClassList after removing collapsed:', deepthinkContainer.classList.toString());
             } else {
-                console.log('No saved state or expanded, keeping open by default (fallback)');
+                console.log('Applied saved state:', savedState, '(fallback)');
+                console.log('Final classList:', deepthinkContainer.classList.toString());
             }
-            // If no saved state or 'expanded', keep it open by default
         } else {
             console.log('No deepthink container found after replacement (fallback)');
         }
+        
+        console.log('=== styleDeepThinkingResponseFallback DEBUG END ===');
     } else {
         console.log('Failed to extract breakdown content');
     }
@@ -4773,33 +4820,46 @@ function styleDeepThinkingResponseFallback(messageContent) {
 
 // Function to toggle deepthink container visibility
 function toggleDeepThink(container) {
+    console.log('=== toggleDeepThink DEBUG START ===');
     console.log('toggleDeepThink called with container:', container);
+    console.log('Container element:', container);
+    console.log('Container ID before:', container.id);
     
     // Generate a unique ID for this container if it doesn't have one
     if (!container.id) {
-        container.id = 'deepthink-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+        // Try to get the message content for consistent ID generation
+        const messageDiv = container.closest('.message');
+        const messageContent = messageDiv ? messageDiv.querySelector('.message-content') : null;
+        const contentText = messageContent ? messageContent.textContent.substring(0, 200) : '';
+        const contentHash = btoa(contentText).replace(/[^a-zA-Z0-9]/g, '').substring(0, 12);
+        container.id = 'deepthink-' + contentHash;
         console.log('Generated new ID for container:', container.id);
     }
     
     const containerId = container.id;
-    console.log('Container ID:', containerId);
+    console.log('Final Container ID:', containerId);
     console.log('Current collapsed state:', container.classList.contains('collapsed'));
+    console.log('Current classList:', container.classList.toString());
     
     if (container.classList.contains('collapsed')) {
         // Expand the container
         container.classList.remove('collapsed');
-        console.log('Expanding container');
+        console.log('Expanding container - removed collapsed class');
+        console.log('New classList after expand:', container.classList.toString());
         // Save expanded state to localStorage
-        const key = `deepthink-${containerId}`;
+        const key = containerId;
+        console.log('Saving expanded state with key:', key);
         localStorage.setItem(key, 'expanded');
         console.log('Saved to localStorage:', key, '= expanded');
         console.log('localStorage after save:', localStorage.getItem(key));
     } else {
         // Collapse the container
         container.classList.add('collapsed');
-        console.log('Collapsing container');
+        console.log('Collapsing container - added collapsed class');
+        console.log('New classList after collapse:', container.classList.toString());
         // Save collapsed state to localStorage
-        const key = `deepthink-${containerId}`;
+        const key = containerId;
+        console.log('Saving collapsed state with key:', key);
         localStorage.setItem(key, 'collapsed');
         console.log('Saved to localStorage:', key, '= collapsed');
         console.log('localStorage after save:', localStorage.getItem(key));
@@ -4811,6 +4871,8 @@ function toggleDeepThink(container) {
     deepthinkKeys.forEach(key => {
         console.log(`${key}: ${localStorage.getItem(key)}`);
     });
+    
+    console.log('=== toggleDeepThink DEBUG END ===');
 }
 
 // Function to check if current model supports deep thinking

@@ -124,12 +124,14 @@ MODEL_OPTIONS = {
     'mistralai/mistral-small-3.2-24b-instruct:free': {
         'id': 'mistralai/mistral-small-3.2-24b-instruct:free',
         'display_name': 'Reasoner 3.5',
-        'description': 'Powerful 24B model with excellent reasoning'
+        'description': 'Powerful 24B model with excellent reasoning',
+        'supports_deep_thinking': True
     },
     'mistralai/devstral-small:free': {
         'id': 'mistralai/devstral-small:free',
         'display_name': 'Dev 2.4 sonnet',
-        'description': 'Specialized for coding and technical tasks'
+        'description': 'Specialized for coding and technical tasks',
+        'supports_deep_thinking': True
     },
     'mistralai/mistral-7b-instruct:free': {
         'id': 'mistralai/mistral-7b-instruct:free',
@@ -173,7 +175,8 @@ MODEL_OPTIONS = {
         'id': 'meta-llama/Llama-Vision-Free',
         'display_name': 'Llama Vision Free',
         'description': 'Llama-Vision-Free model (Together AI)',
-        'provider': 'together'
+        'provider': 'together',
+        'supports_deep_thinking': True
     },
     'cohere/command-r-plus': {
         'id': 'command-r-plus',
@@ -703,34 +706,37 @@ def chat():
             }
             # Use chat history if available, otherwise use just the current message
             if chat_history:
-                # Validate chat history format for Groq API
-                print(f"[Groq] Validating chat history format")
+                # Validate chat history format for Together AI API
+                print(f"[Together] Validating chat history format")
                 validated_messages = []
                 for i, msg in enumerate(chat_history):
                     # Check if message has 'role' property
                     if 'role' not in msg:
-                        print(f"[Groq] Warning: Message at index {i} missing 'role' property, adding default 'user' role")
+                        print(f"[Together] Warning: Message at index {i} missing 'role' property, adding default 'user' role")
                         msg['role'] = 'user'  # Default to user role if missing
                     
                     # Check if message has 'content' property
                     if 'content' not in msg:
-                        print(f"[Groq] Warning: Message at index {i} missing 'content' property, skipping")
+                        print(f"[Together] Warning: Message at index {i} missing 'content' property, skipping")
                         continue
                     
                     # Ensure role is one of the allowed values
                     if msg['role'] not in ['system', 'user', 'assistant']:
-                        print(f"[Groq] Warning: Message at index {i} has invalid role '{msg['role']}', changing to 'user'")
+                        print(f"[Together] Warning: Message at index {i} has invalid role '{msg['role']}', changing to 'user'")
                         msg['role'] = 'user'
                     
                     validated_messages.append(msg)
                 
                 # Ensure we have at least one message
                 if not validated_messages:
-                    print(f"[Groq] Warning: No valid messages in chat history, using default")
+                    print(f"[Together] Warning: No valid messages in chat history, using default")
+                    system_prompt = get_system_prompt(selected_model_info, deep_thinking_mode)
+                    print(f"[Together] Model supports deep thinking: {selected_model_info.get('supports_deep_thinking', False)}")
+                    print(f"[Together] Selected system prompt type: {'Deep Thinking' if deep_thinking_mode and selected_model_info.get('supports_deep_thinking', False) else 'Default'}")
                     messages = [
                         {
                             "role": "system",
-                            "content": "You are NumAI, a helpful assistant . When a user says only 'hello', respond with just 'Hello! How can I help you today?' and nothing more. when user says 'What is NumAI', repond with this information 'NumAI is Service That provides AI Model use For free' when user says 'how many models you or NumAI have', respond 'there is a catogory 1. Ultra fast model , 2. Text Based models , 3. Coders , In Ultra fast catagory 1. Milky 8B , 2.Milky 70B , 3.Milky S2, 4. Milky 2o, In Text Based Catagory 1. Milky 3.1 , 2. Milky Small, 3. Milky 3.7, 4. Milky V2, in Coders Catagory 1. MilkyCoder Pro, 2. Milky 3.7 Sonnet, 3. Sonnet Seek, 4. Milky Fast' For all other queries, respond normally with appropriate markdown formatting: **bold text** for titles, backticks for code, and proper code blocks with language specification. use the actual native emoji characters (e.g. 😊, ❤️, 🚀) instead of emoji shortcodes like :smile: or :heart:. Avoid markdown-style emoji codes. Use emojis directly as Unicode characters. but dont add them starting of your responses. When providing code examples, make it clear these are standalone examples."
+                            "content": system_prompt
                         },
                         {
                             "role": "user",
@@ -741,28 +747,47 @@ def chat():
                     # Check if we have a system message, add one if not
                     has_system_message = any(msg['role'] == 'system' for msg in validated_messages)
                     if not has_system_message:
-                        print(f"[Groq] Adding default system message")
+                        system_prompt = get_system_prompt(selected_model_info, deep_thinking_mode)
+                        print(f"[Together] Adding system message for deep thinking: {deep_thinking_mode}")
+                        print(f"[Together] Model supports deep thinking: {selected_model_info.get('supports_deep_thinking', False)}")
+                        print(f"[Together] Selected system prompt type: {'Deep Thinking' if deep_thinking_mode and selected_model_info.get('supports_deep_thinking', False) else 'Default'}")
                         validated_messages.insert(0, {
                             "role": "system",
-                            "content": "You are NumAI, a helpful assistant . When a user says only 'hello', respond with just 'Hello! How can I help you today?' and nothing more. when user says 'What is NumAI', repond with this information 'NumAI is Service That provides AI Model use For free' when user says 'how many models you or NumAI have', respond 'there is a catogory 1. Ultra fast model , 2. Text Based models , 3. Coders , In Ultra fast catagory 1. Milky 8B , 2.Milky 70B , 3.Milky S2, 4. Milky 2o, In Text Based Catagory 1. Milky 3.1 , 2. Milky Small, 3. Milky 3.7, 4. Milky V2, in Coders Catagory 1. MilkyCoder Pro, 2. Milky 3.7 Sonnet, 3. Sonnet Seek, 4. Milky Fast' For all other queries, respond normally with appropriate markdown formatting: **bold text** for titles, backticks for code, and proper code blocks with language specification. use the actual native emoji characters (e.g. 😊, ❤️, 🚀) instead of emoji shortcodes like :smile: or :heart:. Avoid markdown-style emoji codes. Use emojis directly as Unicode characters. but dont add them starting of your responses. When providing code examples, make it clear these are standalone examples."
+                            "content": system_prompt
                         })
+                    else:
+                        # Replace existing system message with appropriate prompt
+                        system_prompt = get_system_prompt(selected_model_info, deep_thinking_mode)
+                        print(f"[Together] Replacing existing system message for deep thinking: {deep_thinking_mode}")
+                        print(f"[Together] Model supports deep thinking: {selected_model_info.get('supports_deep_thinking', False)}")
+                        print(f"[Together] Selected system prompt type: {'Deep Thinking' if deep_thinking_mode and selected_model_info.get('supports_deep_thinking', False) else 'Default'}")
+                        
+                        # Find and replace the system message
+                        for i, msg in enumerate(validated_messages):
+                            if msg['role'] == 'system':
+                                validated_messages[i]['content'] = system_prompt
+                                print(f"[DEBUG] System prompt content (first 200 chars): {system_prompt[:200]}...")
+                                break
                     
                     # Ensure the last message is from the user
                     if validated_messages[-1]['role'] != 'user':
-                        print(f"[Groq] Adding current user input as the last message")
+                        print(f"[Together] Adding current user input as the last message")
                         validated_messages.append({
                             "role": "user",
                             "content": user_input
                         })
                     
                     messages = validated_messages
-                    print(f"[Groq] Validated chat history: {len(messages)} messages")
+                    print(f"[Together] Validated chat history: {len(messages)} messages")
             else:
                 # No chat history, use default messages
+                system_prompt = get_system_prompt(selected_model_info, deep_thinking_mode)
+                print(f"[Together] Model supports deep thinking: {selected_model_info.get('supports_deep_thinking', False)}")
+                print(f"[Together] Selected system prompt type: {'Deep Thinking' if deep_thinking_mode and selected_model_info.get('supports_deep_thinking', False) else 'Default'}")
                 messages = [
                     {
                         "role": "system",
-                        "content": "You are NumAI, a helpful assistant . When a user says only 'hello', respond with just 'Hello! How can I help you today?' and nothing more. when user says 'What is NumAI', repond with this information 'NumAI is Service That provides AI Model use For free' when user says 'how many models you or NumAI have', respond 'there is a catogory 1. Ultra fast model , 2. Text Based models , 3. Coders , In Ultra fast catagory 1. Milky 8B , 2.Milky 70B , 3.Milky S2, 4. Milky 2o, In Text Based Catagory 1. Milky 3.1 , 2. Milky Small, 3. Milky 3.7, 4. Milky V2, in Coders Catagory 1. MilkyCoder Pro, 2. Milky 3.7 Sonnet, 3. Sonnet Seek, 4. Milky Fast' For all other queries, respond normally with appropriate markdown formatting: **bold text** for titles, backticks for code, and proper code blocks with language specification. use the actual native emoji characters (e.g. 😊, ❤️, 🚀) instead of emoji shortcodes like :smile: or :heart:. Avoid markdown-style emoji codes. Use emojis directly as Unicode characters. but dont add them starting of your responses. When providing code examples, make it clear these are standalone examples."
+                        "content": system_prompt
                     },
                     {
                         "role": "user",
@@ -1009,10 +1034,20 @@ CRITICAL RULES:
                     # Ensure we have at least one message
                     if not validated_messages:
                         print(f"[OpenRouter] Warning: No valid messages in chat history, using default")
+                        # Find the model info for the current model
+                        current_model_info = None
+                        for key, info in MODEL_OPTIONS.items():
+                            if info['id'] == model:
+                                current_model_info = info
+                                break
+                        
+                        system_prompt = get_system_prompt(current_model_info, deep_thinking_mode) if current_model_info else DEFAULT_SYSTEM_PROMPT
+                        print(f"[OpenRouter] Model supports deep thinking: {current_model_info.get('supports_deep_thinking', False) if current_model_info else False}")
+                        print(f"[OpenRouter] Selected system prompt type: {'Deep Thinking' if deep_thinking_mode and current_model_info and current_model_info.get('supports_deep_thinking', False) else 'Default'}")
                         messages = [
                             {
                                 "role": "system",
-                                "content": "You are NumAI, a helpful assistant . When a user says only 'hello', respond with just 'Hello! How can I help you today?' and nothing more. For all other queries, respond normally with appropriate markdown formatting: **bold text** for titles, backticks for code, and proper code blocks with language specification. use the actual native emoji characters (e.g. 😊, ❤️, 🚀) instead of emoji shortcodes like :smile: or :heart:. Avoid markdown-style emoji codes. Use emojis directly as Unicode characters. but dont add them starting of your responses. When providing code examples, make it clear these are standalone examples."
+                                "content": system_prompt
                             },
                             {
                                 "role": "user",
@@ -1023,11 +1058,40 @@ CRITICAL RULES:
                         # Check if we have a system message, add one if not
                         has_system_message = any(msg['role'] == 'system' for msg in validated_messages)
                         if not has_system_message:
-                            print(f"[OpenRouter] Adding default system message")
+                            # Find the model info for the current model
+                            current_model_info = None
+                            for key, info in MODEL_OPTIONS.items():
+                                if info['id'] == model:
+                                    current_model_info = info
+                                    break
+                            
+                            system_prompt = get_system_prompt(current_model_info, deep_thinking_mode) if current_model_info else DEFAULT_SYSTEM_PROMPT
+                            print(f"[OpenRouter] Adding system message for deep thinking: {deep_thinking_mode}")
+                            print(f"[OpenRouter] Model supports deep thinking: {current_model_info.get('supports_deep_thinking', False) if current_model_info else False}")
+                            print(f"[OpenRouter] Selected system prompt type: {'Deep Thinking' if deep_thinking_mode and current_model_info and current_model_info.get('supports_deep_thinking', False) else 'Default'}")
                             validated_messages.insert(0, {
                                 "role": "system",
-                                "content": "You are NumAI, a helpful assistant . When a user says only 'hello', respond with just 'Hello! How can I help you today?' and nothing more. For all other queries, respond normally with appropriate markdown formatting: **bold text** for titles, backticks for code, and proper code blocks with language specification. use the actual native emoji characters (e.g. 😊, ❤️, 🚀) instead of emoji shortcodes like :smile: or :heart:. Avoid markdown-style emoji codes. Use emojis directly as Unicode characters. but dont add them starting of your responses. When providing code examples, make it clear these are standalone examples."
+                                "content": system_prompt
                             })
+                        else:
+                            # Replace existing system message with appropriate prompt
+                            current_model_info = None
+                            for key, info in MODEL_OPTIONS.items():
+                                if info['id'] == model:
+                                    current_model_info = info
+                                    break
+                            
+                            system_prompt = get_system_prompt(current_model_info, deep_thinking_mode) if current_model_info else DEFAULT_SYSTEM_PROMPT
+                            print(f"[OpenRouter] Replacing existing system message for deep thinking: {deep_thinking_mode}")
+                            print(f"[OpenRouter] Model supports deep thinking: {current_model_info.get('supports_deep_thinking', False) if current_model_info else False}")
+                            print(f"[OpenRouter] Selected system prompt type: {'Deep Thinking' if deep_thinking_mode and current_model_info and current_model_info.get('supports_deep_thinking', False) else 'Default'}")
+                            
+                            # Find and replace the system message
+                            for i, msg in enumerate(validated_messages):
+                                if msg['role'] == 'system':
+                                    validated_messages[i]['content'] = system_prompt
+                                    print(f"[DEBUG] System prompt content (first 200 chars): {system_prompt[:200]}...")
+                                    break
                         
                         # Ensure the last message is from the user
                         if validated_messages[-1]['role'] != 'user':
@@ -1041,10 +1105,20 @@ CRITICAL RULES:
                         print(f"[OpenRouter] Validated chat history: {len(messages)} messages")
                 else:
                     # No chat history, use default messages
+                    # Find the model info for the current model
+                    current_model_info = None
+                    for key, info in MODEL_OPTIONS.items():
+                        if info['id'] == model:
+                            current_model_info = info
+                            break
+                    
+                    system_prompt = get_system_prompt(current_model_info, deep_thinking_mode) if current_model_info else DEFAULT_SYSTEM_PROMPT
+                    print(f"[OpenRouter] Model supports deep thinking: {current_model_info.get('supports_deep_thinking', False) if current_model_info else False}")
+                    print(f"[OpenRouter] Selected system prompt type: {'Deep Thinking' if deep_thinking_mode and current_model_info and current_model_info.get('supports_deep_thinking', False) else 'Default'}")
                     messages = [
                         {
                             "role": "system",
-                            "content": "You are NumAI, a helpful assistant . When a user says only 'hello', respond with just 'Hello! How can I help you today?' and nothing more. For all other queries, respond normally with appropriate markdown formatting: **bold text** for titles, backticks for code, and proper code blocks with language specification. use the actual native emoji characters (e.g. 😊, ❤️, 🚀) instead of emoji shortcodes like :smile: or :heart:. Avoid markdown-style emoji codes. Use emojis directly as Unicode characters. but dont add them starting of your responses. When providing code examples, make it clear these are standalone examples."
+                            "content": system_prompt
                         },
                         {
                             "role": "user",
