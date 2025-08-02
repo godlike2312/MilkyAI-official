@@ -37,6 +37,56 @@ let controller = null;
 let currentChatId = null;
 let currentUser = null;
 
+// Deep thinking mode state
+let deepThinkingMode = false;
+let currentModel = 'deepseek/deepseek-chat-v3-0324:free'; // Default model with full ID
+let currentModelInfo = null;
+
+// Load deep thinking mode from localStorage on page load
+document.addEventListener('DOMContentLoaded', () => {
+    // Test localStorage functionality
+    console.log('Testing localStorage functionality...');
+    const testKey = 'test-deepthink';
+    localStorage.setItem(testKey, 'test-value');
+    const testValue = localStorage.getItem(testKey);
+    console.log('localStorage test:', testKey, '=', testValue);
+    localStorage.removeItem(testKey);
+    
+    console.log('localStorage available:', typeof localStorage !== 'undefined');
+    console.log('localStorage quota exceeded:', false); // We'll check this later if needed
+    const savedDeepThinkingMode = localStorage.getItem('deepThinkingMode');
+    if (savedDeepThinkingMode === 'true') {
+        deepThinkingMode = true;
+        // Update the button state
+        const thinkingToggleBtn = document.getElementById('thinking-toggle-btn');
+        if (thinkingToggleBtn) {
+            thinkingToggleBtn.classList.add('active');
+            thinkingToggleBtn.setAttribute('data-tooltip', 'Deep Think, Think For Better Reasoning');
+        }
+    }
+    
+    // Clean up old deepthink localStorage entries (keep only last 100)
+    const deepthinkKeys = Object.keys(localStorage).filter(key => key.startsWith('deepthink-'));
+    if (deepthinkKeys.length > 100) {
+        // Sort by timestamp and remove oldest entries
+        const sortedKeys = deepthinkKeys.sort((a, b) => {
+            const timestampA = parseInt(a.split('-')[1]) || 0;
+            const timestampB = parseInt(b.split('-')[1]) || 0;
+            return timestampA - timestampB;
+        });
+        
+        // Remove oldest entries (keep only last 100)
+        const keysToRemove = sortedKeys.slice(0, sortedKeys.length - 100);
+        keysToRemove.forEach(key => localStorage.removeItem(key));
+        console.log(`Cleaned up ${keysToRemove.length} old deepthink localStorage entries`);
+    }
+    
+    // Update thinking toggle button after models are loaded
+    setTimeout(() => {
+        updateThinkingToggleButton();
+    }, 1000);
+});
+
 // Offline indicator element
 const offlineIndicator = document.createElement('div');
 offlineIndicator.className = 'offline-indicator';
@@ -201,7 +251,7 @@ Follow these strict behavioral and formatting rules:
    - Answer queries directly and concisely, avoiding unnecessary elaboration.
    - When the user says only "hello", respond exactly with: Hello! How can I help you today? — No extra words, emojis, or formatting.
    - For vague or unclear queries, ask a single, polite follow-up question to clarify the user's intent.
-   - For sensitive, unethical, or unsupported requests, respond politely with: "I’m unable to assist with that request. Can I help with something else?"
+   - For sensitive, unethical, or unsupported requests, respond politely with: "I'm unable to assist with that request. Can I help with something else?"
 
 2. **Formatting Rules**:
    - Use proper Markdown formatting: **bold** for section titles or emphasis, *italics* for tips or subtle notes, backticks for inline code like \`example\`.
@@ -217,8 +267,8 @@ Follow these strict behavioral and formatting rules:
    - Provide factual and helpful responses across a wide range of topics.
 
 5. **Error Handling**:
-   - If a query exceeds your capabilities, respond with: "I don’t have enough information to answer that fully, but I can help with [related topic] or find more details if needed. What would you like to explore?"
-   - For repetitive or unclear follow-ups, gently guide the user to rephrase: "I’m here to help! Could you rephrase or provide more details to ensure I address your question accurately?"`
+   - If a query exceeds your capabilities, respond with: "I don't have enough information to answer that fully, but I can help with [related topic] or find more details if needed. What would you like to explore?"
+   - For repetitive or unclear follow-ups, gently guide the user to rephrase: "I'm here to help! Could you rephrase or provide more details to ensure I address your question accurately?"`
 }
 ];
 
@@ -263,7 +313,6 @@ function showToast(message, duration = 3000) {
 
 // Model selection variables
 let availableModels = {};
-let currentModel = 'deepseek/deepseek-chat-v3-0324:free'; // Default model with full ID
 
 // Function to fetch available models
 async function fetchAvailableModels() {
@@ -303,12 +352,17 @@ async function fetchAvailableModels() {
         
         // Update UI with model information
         if (availableModels[currentModel]) {
+            currentModelInfo = availableModels[currentModel];
             updateModelIndicator(availableModels[currentModel].display_name);
+            console.log('Current model info updated:', currentModelInfo);
         } else {
             console.error('Cannot update model indicator: model not found', currentModel);
         }
         
         populateModelSelectors();
+        
+        // Update thinking toggle button based on model support
+        updateThinkingToggleButton();
         
         return data;
     } catch (error) {
@@ -352,6 +406,7 @@ function populateModelSelectors() {
         modelSelector.addEventListener('change', function() {
             const selectedKey = this.value;
             currentModel = selectedKey;
+            currentModelInfo = availableModels[selectedKey];
             updateModelIndicator(availableModels[selectedKey].display_name);
             
             // Update model description
@@ -362,6 +417,9 @@ function populateModelSelectors() {
             
             // Save preference to localStorage
             localStorage.setItem('preferred_model', selectedKey);
+            
+            // Update thinking toggle button based on new model
+            updateThinkingToggleButton();
         });
         
         // Trigger change event to update description
@@ -502,7 +560,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 
                 // Hide with animation
                 modelSwitcherPopup.style.opacity = '0';
-                modelSwitcherPopup.style.transform = 'translateY(10px)';
+                modelSwitcherPopup.style.transform = 'translateX(-50%) translateY(10px)';
                 
                 // After animation completes, hide the element
                 setTimeout(() => {
@@ -671,7 +729,9 @@ modelOptions.forEach(option => {
         if (modelId) {
             // Update current model
             currentModel = modelId;
+            currentModelInfo = availableModels[modelId];
             console.log('Model selected:', modelId);
+            console.log('Model info:', currentModelInfo);
             
             // Update selected state in UI
             modelOptions.forEach(opt => {
@@ -703,6 +763,9 @@ modelOptions.forEach(option => {
             
             // Update model indicator
             updateModelIndicator(modelName);
+            
+            // Update thinking toggle button based on new model
+            updateThinkingToggleButton();
             
             // Close the popup with animation
             modelSwitcherPopup.style.opacity = '0';
@@ -841,8 +904,13 @@ function addMessage(content, type, isOfflineMessage = false, modelId = null) {
             return originalText.call(this, emojiText);
         };
         
-        // Check if content should be treated as code (contains HTML patterns)
-        if (shouldTreatAsCode(content) && !content.includes('```')) {
+        // Check if this is a deep thinking response FIRST, before any other parsing
+        if (content.includes('DEEP THINKING BREAKDOWN') || content.includes('THOUGHT PROCESS') || 
+            content.includes('FINAL ANSWER') || content.includes('🤔') || content.includes('💡')) {
+            console.log('Detected deep thinking content in existing message, applying deepthink styling');
+            console.log('Content preview:', content.substring(0, 200));
+            styleDeepThinkingResponse(messageContent);
+        } else if (shouldTreatAsCode(content) && !content.includes('```')) {
             // Wrap HTML content in code blocks to prevent execution
             const wrappedContent = '```html\n' + content + '\n```';
             messageContent.innerHTML = parseCodeBlocks(wrappedContent);
@@ -1251,13 +1319,26 @@ function detectLanguageFromContent(content) {
     return null;
 }
 
+// Function to decode HTML entities
+function decodeHtmlEntities(text) {
+    const textarea = document.createElement('textarea');
+    textarea.innerHTML = text;
+    return textarea.value;
+}
+
 // Function to parse and format code blocks
 function parseCodeBlocks(content) {
+    console.log('parseCodeBlocks called with content preview:', content.substring(0, 200));
+    console.log('Content contains code blocks:', content.includes('```'));
+    
     let parts = content.split('```');
+    console.log('Split into', parts.length, 'parts');
+    
     let result = '';
     for (let i = 0; i < parts.length; i++) {
         if (i % 2 === 0) {
             let textContent = parts[i];
+            console.log('Processing text part', i, 'with preview:', textContent.substring(0, 100));
             // Numbered lists
             textContent = textContent.replace(/^(\d+)\.\s+(.+)$/gm, '<div class="list-item"><span class="list-number">$1.</span><span class="list-content">$2</span></div>');
             // Bullet lists
@@ -1311,6 +1392,8 @@ function parseCodeBlocks(content) {
         } else {
             let codeContent = parts[i];
             let language = '';
+            
+            console.log('Processing code part', i, 'with preview:', codeContent.substring(0, 100));
             
             // Check if the first line contains a language identifier (no spaces, just alphanumeric)
             const firstLineBreak = codeContent.indexOf('\n');
@@ -1455,6 +1538,13 @@ async function sendMessage(message) {
 
         const loadingIndicator = addLoadingIndicator();
 
+        // Set thinking start time if deep thinking mode is enabled
+        let thinkingStartTime = null;
+        if (deepThinkingMode) {
+            thinkingStartTime = Date.now();
+            console.log('Deep thinking mode enabled, starting timing');
+        }
+
         let headers = { 'Content-Type': 'application/json' };
         if (firebase.auth().currentUser) {
             try {
@@ -1488,7 +1578,8 @@ async function sendMessage(message) {
             body: JSON.stringify({
                 message,
                 model: currentModel,
-                chatHistory: processedChatHistory
+                chatHistory: processedChatHistory,
+                deepThinkingMode: deepThinkingMode
             }),
             signal
         });
@@ -1507,16 +1598,107 @@ async function sendMessage(message) {
         const content = data.response;
 
         if (content) {
+            // Calculate thinking time when response is received
+            const thinkingEndTime = Date.now();
+            let thinkingDuration = 0;
+            
+            if (deepThinkingMode && thinkingStartTime) {
+                thinkingDuration = Math.round((thinkingEndTime - thinkingStartTime) / 1000);
+                console.log(`Thinking duration: ${thinkingDuration} seconds`);
+            }
+            
             // Create assistant message UI element
             const messageDiv = document.createElement('div');
             messageDiv.classList.add('message', 'assistant');
             const messageContent = document.createElement('div');
             messageContent.classList.add('message-content');
             messageDiv.appendChild(messageContent);
+            
             chatMessages.appendChild(messageDiv);
             gsap.set(messageDiv, { opacity: 0, y: 20 });
             gsap.to(messageDiv, { opacity: 1, y: 0, duration: 0.5, ease: 'power2.out' });
             chatMessages.scrollTop = chatMessages.scrollHeight;
+            
+
+
+            // Check if deep thinking mode is enabled and create container structure
+            if (deepThinkingMode) {
+                console.log('Deep thinking mode enabled, creating deepthink container structure');
+                
+                // Create the deepthink container structure
+                const deepthinkContainer = document.createElement('div');
+                deepthinkContainer.className = 'deepthink-container';
+                
+                // Generate unique ID for this container
+                const containerId = 'deepthink-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+                deepthinkContainer.id = containerId;
+                
+                const deepthinkHeader = document.createElement('div');
+                deepthinkHeader.className = 'deepthink-header';
+                deepthinkHeader.onclick = function() { toggleDeepThink(deepthinkContainer); };
+                
+                // Create React icon
+                const deepthinkIcon = document.createElement('div');
+                deepthinkIcon.className = 'deepthink-icon';
+                deepthinkIcon.innerHTML = `
+                    <svg width="16" height="16" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg">
+                        <!-- Central circle -->
+                        <circle cx="128" cy="128" r="16" />
+                        <!-- Three ellipses forming the React atom -->
+                        <ellipse rx="50" ry="120" cx="128" cy="128" transform="rotate(0 128 128)" />
+                        <ellipse rx="50" ry="120" cx="128" cy="128" transform="rotate(60 128 128)" />
+                        <ellipse rx="50" ry="120" cx="128" cy="128" transform="rotate(120 128 128)" />
+                    </svg>
+                `;
+                
+                const deepthinkTitle = document.createElement('div');
+                deepthinkTitle.className = 'deepthink-title';
+                deepthinkTitle.textContent = 'Thinking...';
+                
+                const deepthinkCaret = document.createElement('div');
+                deepthinkCaret.className = 'deepthink-caret';
+                deepthinkCaret.innerHTML = `
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M7 10l5 5 5-5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                `;
+                
+                deepthinkHeader.appendChild(deepthinkIcon);
+                deepthinkHeader.appendChild(deepthinkTitle);
+                deepthinkHeader.appendChild(deepthinkCaret);
+                
+                const deepthinkContent = document.createElement('div');
+                deepthinkContent.className = 'deepthink-content';
+                
+                deepthinkContainer.appendChild(deepthinkHeader);
+                deepthinkContainer.appendChild(deepthinkContent);
+                
+                // Restore saved state from localStorage (default to expanded)
+                console.log('sendMessage: Container ID:', containerId);
+                const key = `deepthink-${containerId}`;
+                const savedState = localStorage.getItem(key);
+                console.log('sendMessage: Saved state from localStorage:', key, '=', savedState);
+                if (savedState === 'collapsed') {
+                    deepthinkContainer.classList.add('collapsed');
+                    console.log('sendMessage: Applied collapsed state to container');
+                } else {
+                    console.log('sendMessage: No saved state or expanded, keeping open by default');
+                }
+                // If no saved state or 'expanded', keep it open by default
+                
+                // Add the deepthink container to the message
+                messageContent.appendChild(deepthinkContainer);
+                
+                // Create a separate container for the final answer
+                const finalAnswerContainer = document.createElement('div');
+                finalAnswerContainer.className = 'final-answer-container';
+                messageContent.appendChild(finalAnswerContainer);
+                
+                // Store references for later use
+                messageDiv.deepthinkContent = deepthinkContent;
+                messageDiv.finalAnswerContainer = finalAnswerContainer;
+                messageDiv.isDeepThinking = true;
+            }
 
             // Markdown & Emoji rendering
             const renderEmojiMarkdown = (text) => {
@@ -1547,108 +1729,193 @@ async function sendMessage(message) {
             const shouldCancelTyping = () => !isResponding || isTypingCancelled;
 
             try {
-                // Check if content should be treated as code (contains HTML patterns)
-                let processedContent = content;
-                if (shouldTreatAsCode(content) && !content.includes('```')) {
-                    // Wrap HTML content in code blocks to prevent execution
-                    processedContent = '```html\n' + content + '\n```';
-                }
-                
-                if (processedContent.includes('```')) {
-                    const parts = processedContent.split('```');
-                    let processedParts = parts.map(() => '');
-
-                    for (let i = 0; i < parts.length; i++) {
-                        const part = parts[i];
-                        for (let j = 0; j < part.length; j += 70) { // Reduced chunk size to 50
-                            if (shouldCancelTyping()) throw new Error('Typing cancelled');
-                            processedParts[i] += part.substring(j, j + 70);
-
-                            // Use parseCodeBlocks instead of renderEmojiMarkdown for proper code block rendering
-                            const finalProcessedContent = processedParts.join('```');
-                            messageContent.innerHTML = parseCodeBlocks(finalProcessedContent);
-
-                            // Store the original content as a data attribute on the message div
-                            const messageDiv = messageContent.closest('.message');
-                            if (messageDiv && !messageDiv.hasAttribute('data-original-content')) {
-                                messageDiv.setAttribute('data-original-content', content);
-                                console.log('Setting original content in renderEmojiMarkdown');
-                            }
-
-                            // Apply syntax highlighting to any code blocks that have been rendered only if hljs is defined
-                            if (typeof hljs !== 'undefined') {
-                                messageContent.querySelectorAll('pre code').forEach(block => {
-                                    try {
-                                        // Check if this is HTML content that should not be highlighted
-                                        const codeText = block.textContent;
-                                        if (codeText.includes('<') && codeText.includes('>')) {
-                                            // For HTML content, ensure it's displayed as text only
-                                            block.textContent = codeText;
-                                        } else {
-                                            // For non-HTML content, apply syntax highlighting
-                                            const originalText = block.textContent;
-                                            hljs.highlightElement(block);
-                                            // Ensure the content is safe by using textContent
-                                            if (block.innerHTML !== originalText) {
-                                                block.textContent = originalText;
-                                            }
-                                        }
-                                    } catch (e) {
-                                        console.error('Error applying syntax highlighting:', e);
-                                    }
-                                });
-                            } else {
-                                console.warn('highlight.js not loaded, skipping syntax highlighting');
-                            }
-
-                            chatMessages.scrollTop = chatMessages.scrollHeight;
-                            await new Promise(r => setTimeout(r, 20)); // Increased delay to 20ms
+                // Check if deep thinking mode is enabled and process content accordingly
+                if (deepThinkingMode && messageDiv.isDeepThinking) {
+                    console.log('Processing content in deep thinking mode');
+                    
+                    // Use the pre-calculated thinking duration
+                    if (thinkingDuration > 0) {
+                        // Update the thinking time in the header
+                        const deepthinkTitle = messageDiv.querySelector('.deepthink-title');
+                        if (deepthinkTitle) {
+                            deepthinkTitle.textContent = `Thought for ${thinkingDuration} seconds`;
                         }
+                    }
+                    
+                    // Parse the content to extract thought process and final answer
+                    let thoughtProcess = '';
+                    let finalAnswer = '';
+                    
+                    // Try different patterns for splitting - more robust parsing
+                    const patterns = [
+                        { split: '**FINAL ANSWER**', thought: '**DEEP THINKING BREAKDOWN**' },
+                        { split: 'FINAL ANSWER', thought: 'DEEP THINKING BREAKDOWN' },
+                        { split: '**THOUGHT PROCESS**', thought: '**THOUGHT PROCESS**' },
+                        { split: 'THOUGHT PROCESS', thought: 'THOUGHT PROCESS' },
+                        // Add more flexible patterns
+                        { split: '---', thought: '**DEEP THINKING BREAKDOWN**' },
+                        { split: '---', thought: 'DEEP THINKING BREAKDOWN' },
+                        // Legacy patterns with emojis (for backward compatibility)
+                        { split: '💡 **FINAL ANSWER**', thought: '🤔 **DEEP THINKING BREAKDOWN**' },
+                        { split: '💡 FINAL ANSWER', thought: '🤔 DEEP THINKING BREAKDOWN' },
+                        { split: '---', thought: '🤔 **DEEP THINKING BREAKDOWN**' },
+                        { split: '---', thought: '🤔 DEEP THINKING BREAKDOWN' }
+                    ];
+                    
+                    let foundPattern = false;
+                    for (const pattern of patterns) {
+                        const parts = content.split(pattern.split);
+                        if (parts.length >= 2) {
+                            // Extract thought process (remove the header)
+                            thoughtProcess = parts[0].replace(pattern.thought, '').trim();
+                            // Extract final answer (everything after the split)
+                            finalAnswer = parts.slice(1).join(pattern.split).trim();
+                            
+                            // Additional cleanup for final answer
+                            if (finalAnswer.startsWith('💡 **FINAL ANSWER**')) {
+                                finalAnswer = finalAnswer.replace('💡 **FINAL ANSWER**', '').trim();
+                            } else if (finalAnswer.startsWith('💡 FINAL ANSWER')) {
+                                finalAnswer = finalAnswer.replace('💡 FINAL ANSWER', '').trim();
+                            } else if (finalAnswer.startsWith('**FINAL ANSWER**')) {
+                                finalAnswer = finalAnswer.replace('**FINAL ANSWER**', '').trim();
+                            } else if (finalAnswer.startsWith('FINAL ANSWER')) {
+                                finalAnswer = finalAnswer.replace('FINAL ANSWER', '').trim();
+                            }
+                            
+                            console.log('Found pattern:', pattern.split);
+                            console.log('Thought process length:', thoughtProcess.length);
+                            console.log('Final answer length:', finalAnswer.length);
+                            foundPattern = true;
+                            break;
+                        }
+                    }
+                    
+                    // If we found both sections and they have content
+                    if (foundPattern && thoughtProcess && finalAnswer) {
+                        console.log('Successfully parsed deep thinking response');
+                        console.log('Thought process contains code blocks:', thoughtProcess.includes('```'));
+                        console.log('Final answer contains code blocks:', finalAnswer.includes('```'));
+                        console.log('Thought process preview:', thoughtProcess.substring(0, 200));
+                        console.log('Final answer preview:', finalAnswer.substring(0, 200));
+                        
+                        // Parse the content properly for display
+                        const renderEmojiMarkdown = (text) => {
+                            console.log('Rendering markdown for text:', text.substring(0, 100));
+                            if (text.includes('```')) {
+                                console.log('Text contains code blocks, using parseCodeBlocks');
+                                return parseCodeBlocks(text);
+                            }
+                            
+                            const renderer = new marked.Renderer();
+                            const originalText = renderer.text;
+                            const originalLink = renderer.link;
+                            renderer.link = function(href, title, text) {
+                                const link = originalLink.call(this, href, title, text);
+                                return link.replace('<a ', '<a target="_blank" rel="noopener noreferrer" ');
+                            };
 
-                        if (i < parts.length - 1) {
-                            if (shouldCancelTyping()) throw new Error('Typing cancelled');
-                            await new Promise(r => setTimeout(r, 20)); // Increased delay to 20ms
+                            renderer.text = function(text) {
+                                return originalText.call(this, text);
+                            };
+
+                            return marked.parse(text, { renderer });
+                        };
+                        
+                        // Use the existing deepthink containers instead of replacing the entire content
+                        console.log('Using existing deepthink containers for streaming');
+                        
+                        // Stream content into the existing containers
+                        await animateTyping(messageDiv.deepthinkContent, thoughtProcess, renderEmojiMarkdown);
+                        await animateTyping(messageDiv.finalAnswerContainer, finalAnswer, renderEmojiMarkdown);
+                        
+                        // Verify the content was replaced
+                        console.log('After replacement, messageContent.innerHTML length:', messageContent.innerHTML.length);
+                        
+                        // Initially collapse the thought process
+                        const deepthinkContainer = messageContent.querySelector('.deepthink-container');
+                        if (deepthinkContainer) {
+                            console.log('Found deepthink container after replacement');
+                            // deepthinkContainer.classList.add('collapsed'); // Now open by default
+                        } else {
+                            console.log('No deepthink container found after replacement');
+                        }
+                    } else {
+                        console.log('Failed to parse deep thinking response, using fallback approach');
+                        
+                        // Fallback: Check if content contains deep thinking indicators
+                        const hasDeepThinkingIndicators = content.includes('DEEP THINKING') || 
+                                                       content.includes('THOUGHT PROCESS') ||
+                                                       content.includes('FINAL ANSWER') ||
+                                                       content.includes('🤔') || 
+                                                       content.includes('💡');
+                        
+                        if (hasDeepThinkingIndicators) {
+                            // Try to extract any content before "FINAL ANSWER" as thought process
+                            const finalAnswerPatterns = ['**FINAL ANSWER**', 'FINAL ANSWER', '💡 **FINAL ANSWER**', '💡 FINAL ANSWER'];
+                            let thoughtProcessFallback = content;
+                            let finalAnswerFallback = '';
+                            
+                            for (const pattern of finalAnswerPatterns) {
+                                if (content.includes(pattern)) {
+                                    const parts = content.split(pattern);
+                                    if (parts.length >= 2) {
+                                        thoughtProcessFallback = parts[0].trim();
+                                        finalAnswerFallback = parts.slice(1).join(pattern).trim();
+                                        break;
+                                    }
+                                }
+                            }
+                            
+                            // Clean up thought process (remove headers)
+                            const thoughtHeaders = ['**DEEP THINKING BREAKDOWN**', 'DEEP THINKING BREAKDOWN', '🤔 **DEEP THINKING BREAKDOWN**', '🤔 DEEP THINKING BREAKDOWN'];
+                            for (const header of thoughtHeaders) {
+                                thoughtProcessFallback = thoughtProcessFallback.replace(header, '').trim();
+                            }
+                            
+                            if (thoughtProcessFallback && finalAnswerFallback) {
+                                console.log('Using fallback parsing for deep thinking content');
+                                await animateTyping(messageDiv.deepthinkContent, thoughtProcessFallback, renderEmojiMarkdown);
+                                await animateTyping(messageDiv.finalAnswerContainer, finalAnswerFallback, renderEmojiMarkdown);
+                            } else {
+                                // Last resort: put everything in final answer
+                                console.log('Using last resort: putting all content in final answer');
+                                await animateTyping(messageDiv.finalAnswerContainer, content, renderEmojiMarkdown);
+                            }
+                        } else {
+                            // No deep thinking indicators, treat as regular content
+                            console.log('No deep thinking indicators found, treating as regular content');
+                            await animateTyping(messageDiv.finalAnswerContainer, content, renderEmojiMarkdown);
+                        }
+                        
+                        // Expand the deepthink container
+                        const deepthinkContainer = messageDiv.querySelector('.deepthink-container');
+                        if (deepthinkContainer) {
+                            deepthinkContainer.classList.remove('collapsed');
                         }
                     }
                 } else {
-                    for (let i = 0; i < content.length; i += 10) { // Reduced chunk size to 10
-                        if (shouldCancelTyping()) throw new Error('Typing cancelled');
-                        formattedContent += content.substring(i, i + 10);
-                        messageContent.innerHTML = renderEmojiMarkdown(formattedContent);
-
-                        const messageDiv = messageContent.closest('.message');
-                        if (messageDiv && !messageDiv.hasAttribute('data-original-content')) {
-                            messageDiv.setAttribute('data-original-content', content);
-                        }
-
-                        // Apply syntax highlighting to any code blocks that have been rendered only if hljs is defined
-                        if (typeof hljs !== 'undefined') {
-                            messageContent.querySelectorAll('pre code').forEach(block => {
-                                try {
-                                    // Check if this is HTML content that should not be highlighted
-                                    const codeText = block.textContent;
-                                    if (codeText.includes('<') && codeText.includes('>')) {
-                                        // For HTML content, ensure it's displayed as text only
-                                        block.textContent = codeText;
-                                    } else {
-                                        // For non-HTML content, apply syntax highlighting
-                                        const originalText = block.textContent;
-                                        hljs.highlightElement(block);
-                                        // Ensure the content is safe by using textContent
-                                        if (block.innerHTML !== originalText) {
-                                            block.textContent = originalText;
-                                        }
-                                    }
-                                } catch (e) {
-                                    console.error('Error applying syntax highlighting:', e);
-                                }
-                            });
-                        } else {
-                            console.warn('highlight.js not loaded, skipping syntax highlighting');
-                        }
-
-                        chatMessages.scrollTop = chatMessages.scrollHeight;
-                        await new Promise(r => setTimeout(r, 100)); // Increased delay to 100ms
+                    // Regular content processing (non-deep thinking mode)
+                    console.log('Processing content in regular mode');
+                    
+                    // Check if content should be treated as code (contains HTML patterns)
+                    let processedContent = content;
+                    if (shouldTreatAsCode(content) && !content.includes('```')) {
+                        // Wrap HTML content in code blocks to prevent execution
+                        processedContent = '```html\n' + content + '\n```';
+                    }
+                    
+                    if (processedContent.includes('```')) {
+                        // Use typing animation for code content
+                        await animateTyping(messageContent, processedContent, (text) => parseCodeBlocks(text));
+                    } else {
+                        // Use typing animation for regular content
+                        await animateTyping(messageContent, content, renderEmojiMarkdown);
+                    }
+                    
+                    // Store the original content as a data attribute on the message div
+                    if (messageDiv && !messageDiv.hasAttribute('data-original-content')) {
+                        messageDiv.setAttribute('data-original-content', content);
+                        console.log('Setting original content in regular mode');
                     }
                 }
             } catch (err) {
@@ -2659,7 +2926,7 @@ Follow these strict behavioral and formatting rules:
    - Answer queries directly and concisely, avoiding unnecessary elaboration.
    - When the user says only "hello", respond exactly with: Hello! How can I help you today? — No extra words, emojis, or formatting.
    - For vague or unclear queries, ask a single, polite follow-up question to clarify the user's intent.
-   - For sensitive, unethical, or unsupported requests, respond politely with: "I’m unable to assist with that request. Can I help with something else?"
+   - For sensitive, unethical, or unsupported requests, respond politely with: "I'm unable to assist with that request. Can I help with something else?"
 
 2. **Formatting Rules**:
    - Use proper Markdown formatting: **bold** for section titles or emphasis, *italics* for tips or subtle notes, backticks for inline code like \`example\`.
@@ -2675,21 +2942,36 @@ Follow these strict behavioral and formatting rules:
    - Provide factual and helpful responses across a wide range of topics.
 
 5. **Error Handling**:
-   - If a query exceeds your capabilities, respond with: "I don’t have enough information to answer that fully, but I can help with [related topic] or find more details if needed. What would you like to explore?"
-   - For repetitive or unclear follow-ups, gently guide the user to rephrase: "I’m here to help! Could you rephrase or provide more details to ensure I address your question accurately?"`
+   - If a query exceeds your capabilities, respond with: "I don't have enough information to answer that fully, but I can help with [related topic] or find more details if needed. What would you like to explore?"
+   - For repetitive or unclear follow-ups, gently guide the user to rephrase: "I'm here to help! Could you rephrase or provide more details to ensure I address your question accurately?"`
 }
                     ];
                     
                     messages.forEach(msg => {
+                        console.log('Loading message from database:', {
+                            role: msg.role,
+                            contentPreview: msg.content.substring(0, 100),
+                            hasDeepThinking: msg.content.includes('DEEP THINKING BREAKDOWN'),
+                            hasThoughtProcess: msg.content.includes('THOUGHT PROCESS'),
+                            hasFinalAnswer: msg.content.includes('FINAL ANSWER')
+                        });
+                        
+                        // Decode HTML entities if the content appears to be HTML
+                        let decodedContent = msg.content;
+                        if (msg.content.includes('&lt;') || msg.content.includes('&gt;') || msg.content.includes('&amp;')) {
+                            decodedContent = decodeHtmlEntities(msg.content);
+                            console.log('Decoded HTML entities in content');
+                        }
+                        
                         // Add message to the UI
                         // This will set data-original-content for assistant messages
-                        addMessage(msg.content, msg.role, false, msg.modelId);
+                        addMessage(decodedContent, msg.role, false, msg.modelId);
                         
                         // Add to chat history array (skip system messages)
                         if (msg.role === 'user' || msg.role === 'assistant') {
                             chatHistory.push({
                                 role: msg.role,
-                                content: msg.content
+                                content: decodedContent
                             });
                         }
                     });
@@ -2748,7 +3030,7 @@ Follow these strict behavioral and formatting rules:
    - Answer queries directly and concisely, avoiding unnecessary elaboration.
    - When the user says only "hello", respond exactly with: Hello! How can I help you today? — No extra words, emojis, or formatting.
    - For vague or unclear queries, ask a single, polite follow-up question to clarify the user's intent.
-   - For sensitive, unethical, or unsupported requests, respond politely with: "I’m unable to assist with that request. Can I help with something else?"
+   - For sensitive, unethical, or unsupported requests, respond politely with: "I'm unable to assist with that request. Can I help with something else?"
 
 2. **Formatting Rules**:
    - Use proper Markdown formatting: **bold** for section titles or emphasis, *italics* for tips or subtle notes, backticks for inline code like \`example\`.
@@ -2764,8 +3046,8 @@ Follow these strict behavioral and formatting rules:
    - Provide factual and helpful responses across a wide range of topics.
 
 5. **Error Handling**:
-   - If a query exceeds your capabilities, respond with: "I don’t have enough information to answer that fully, but I can help with [related topic] or find more details if needed. What would you like to explore?"
-   - For repetitive or unclear follow-ups, gently guide the user to rephrase: "I’m here to help! Could you rephrase or provide more details to ensure I address your question accurately?"`
+   - If a query exceeds your capabilities, respond with: "I don't have enough information to answer that fully, but I can help with [related topic] or find more details if needed. What would you like to explore?"
+   - For repetitive or unclear follow-ups, gently guide the user to rephrase: "I'm here to help! Could you rephrase or provide more details to ensure I address your question accurately?"`
 }
                         ];
                         
@@ -2832,6 +3114,21 @@ Follow these strict behavioral and formatting rules:
 
                 if (originalContent) {
                     console.log('Found original content for message:', originalContent.substring(0, 50) + '...');
+
+                    // Check if this message already has a deepthink container
+                    const existingDeepthinkContainer = messageContent.querySelector('.deepthink-container');
+                    if (existingDeepthinkContainer) {
+                        console.log('Message already has deepthink container, skipping reprocessing');
+                        return;
+                    }
+
+                    // Check if this is a deep thinking response
+                    if (originalContent.includes('DEEP THINKING BREAKDOWN') || originalContent.includes('THOUGHT PROCESS') || 
+                        originalContent.includes('FINAL ANSWER') || originalContent.includes('🤔') || originalContent.includes('💡')) {
+                        console.log('Detected deep thinking content in loaded message, applying deepthink styling');
+                        styleDeepThinkingResponse(messageContent);
+                        return; // Skip further reprocessing
+                    }
 
                     if (originalContent.includes('```')) {
                         console.log('Reprocessing code blocks in loaded message using original content');
@@ -4094,4 +4391,561 @@ function processTextForSpeech(messageContentElement) {
     text = text.replace(/\s+/g, ' ').trim();
     
     return text;
+}
+
+// Function to style deep thinking responses with new deepthink container
+function styleDeepThinkingResponse(messageContent) {
+    // Get the original content from the parent element's data attribute
+    const messageDiv = messageContent.closest('.message');
+    const originalContent = messageDiv ? messageDiv.getAttribute('data-original-content') : '';
+    
+    if (!originalContent) {
+        console.log('No original content found, cannot style deep thinking response');
+        return;
+    }
+    
+    console.log('Styling deep thinking response with new deepthink container');
+    console.log('Original content preview:', originalContent.substring(0, 200));
+    
+    // Parse the content to extract thought process and final answer
+    let thoughtProcess = '';
+    let finalAnswer = '';
+    
+    // Try different patterns for splitting - more robust parsing
+    const patterns = [
+        { split: '**FINAL ANSWER**', thought: '**DEEP THINKING BREAKDOWN**' },
+        { split: 'FINAL ANSWER', thought: 'DEEP THINKING BREAKDOWN' },
+        { split: '**THOUGHT PROCESS**', thought: '**THOUGHT PROCESS**' },
+        { split: 'THOUGHT PROCESS', thought: 'THOUGHT PROCESS' },
+        // Add more flexible patterns
+        { split: '---', thought: '**DEEP THINKING BREAKDOWN**' },
+        { split: '---', thought: 'DEEP THINKING BREAKDOWN' },
+        // Legacy patterns with emojis (for backward compatibility)
+        { split: '💡 **FINAL ANSWER**', thought: '🤔 **DEEP THINKING BREAKDOWN**' },
+        { split: '💡 FINAL ANSWER', thought: '🤔 DEEP THINKING BREAKDOWN' },
+        { split: '---', thought: '🤔 **DEEP THINKING BREAKDOWN**' },
+        { split: '---', thought: '🤔 DEEP THINKING BREAKDOWN' }
+    ];
+    
+    let foundPattern = false;
+    for (const pattern of patterns) {
+        const parts = originalContent.split(pattern.split);
+        if (parts.length >= 2) {
+            // Extract thought process (remove the header)
+            thoughtProcess = parts[0].replace(pattern.thought, '').trim();
+            // Extract final answer (everything after the split)
+            finalAnswer = parts.slice(1).join(pattern.split).trim();
+            
+            // Additional cleanup for final answer
+            if (finalAnswer.startsWith('💡 **FINAL ANSWER**')) {
+                finalAnswer = finalAnswer.replace('💡 **FINAL ANSWER**', '').trim();
+            } else if (finalAnswer.startsWith('💡 FINAL ANSWER')) {
+                finalAnswer = finalAnswer.replace('💡 FINAL ANSWER', '').trim();
+            } else if (finalAnswer.startsWith('**FINAL ANSWER**')) {
+                finalAnswer = finalAnswer.replace('**FINAL ANSWER**', '').trim();
+            } else if (finalAnswer.startsWith('FINAL ANSWER')) {
+                finalAnswer = finalAnswer.replace('FINAL ANSWER', '').trim();
+            }
+            
+            console.log('Found pattern:', pattern.split);
+            console.log('Thought process length:', thoughtProcess.length);
+            console.log('Final answer length:', finalAnswer.length);
+            foundPattern = true;
+            break;
+        }
+    }
+    
+    // If we found both sections and they have content
+    if (foundPattern && thoughtProcess && finalAnswer) {
+        console.log('Successfully parsed deep thinking response');
+        
+        // Parse the content properly for display
+        const renderEmojiMarkdown = (text) => {
+            if (text.includes('```')) {
+                return parseCodeBlocks(text);
+            }
+            
+            const renderer = new marked.Renderer();
+            const originalText = renderer.text;
+            const originalLink = renderer.link;
+            renderer.link = function(href, title, text) {
+                const link = originalLink.call(this, href, title, text);
+                return link.replace('<a ', '<a target="_blank" rel="noopener noreferrer" ');
+            };
+
+            renderer.text = function(text) {
+                return originalText.call(this, text);
+            };
+
+            return marked.parse(text, { renderer });
+        };
+        
+        // Generate unique ID for this container
+        const containerId = 'deepthink-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+        
+        // Create the new deepthink container design
+        const styledContent = `
+            <div class="deepthink-container" id="${containerId}">
+                <div class="deepthink-header" onclick="toggleDeepThink(this.parentElement)">
+                    <div class="deepthink-icon">
+                        <svg width="16" height="16" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg">
+                            <!-- Central circle -->
+                            <circle cx="128" cy="128" r="16" />
+                            <!-- Three ellipses forming the React atom -->
+                            <ellipse rx="50" ry="120" cx="128" cy="128" transform="rotate(0 128 128)" />
+                            <ellipse rx="50" ry="120" cx="128" cy="128" transform="rotate(60 128 128)" />
+                            <ellipse rx="50" ry="120" cx="128" cy="128" transform="rotate(120 128 128)" />
+                        </svg>
+                    </div>
+                    <div class="deepthink-title">Thought Process</div>
+                    <div class="deepthink-caret">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M7 10l5 5 5-5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </div>
+                </div>
+                <div class="deepthink-content">
+                    ${renderEmojiMarkdown(thoughtProcess)}
+                </div>
+            </div>
+            <div class="final-answer-container">
+                ${renderEmojiMarkdown(finalAnswer)}
+            </div>
+        `;
+        
+        // Replace the content with the styled version
+        console.log('Replacing messageContent.innerHTML with styled content');
+        console.log('Styled content preview:', styledContent.substring(0, 200));
+        messageContent.innerHTML = styledContent;
+        
+        // Verify the content was replaced
+        console.log('After replacement, messageContent.innerHTML length:', messageContent.innerHTML.length);
+        
+        // Restore saved state from localStorage (default to expanded)
+        const deepthinkContainer = messageContent.querySelector('.deepthink-container');
+        if (deepthinkContainer) {
+            console.log('Found deepthink container after replacement');
+            console.log('Container ID:', containerId);
+            const key = `deepthink-${containerId}`;
+            const savedState = localStorage.getItem(key);
+            console.log('Saved state from localStorage:', key, '=', savedState);
+            if (savedState === 'collapsed') {
+                deepthinkContainer.classList.add('collapsed');
+                console.log('Applied collapsed state to container');
+            } else {
+                console.log('No saved state or expanded, keeping open by default');
+            }
+            // If no saved state or 'expanded', keep it open by default
+        } else {
+            console.log('No deepthink container found after replacement');
+        }
+    } else {
+        console.log('Failed to parse deep thinking response, using fallback approach');
+        
+        // Fallback: Check if content contains deep thinking indicators
+        const hasDeepThinkingIndicators = originalContent.includes('DEEP THINKING') || 
+                                       originalContent.includes('THOUGHT PROCESS') ||
+                                       originalContent.includes('FINAL ANSWER') ||
+                                       originalContent.includes('🤔') || 
+                                       originalContent.includes('💡');
+        
+        if (hasDeepThinkingIndicators) {
+            // Try to extract any content before "FINAL ANSWER" as thought process
+            const finalAnswerPatterns = ['**FINAL ANSWER**', 'FINAL ANSWER', '💡 **FINAL ANSWER**', '💡 FINAL ANSWER'];
+            let thoughtProcessFallback = originalContent;
+            let finalAnswerFallback = '';
+            
+            for (const pattern of finalAnswerPatterns) {
+                if (originalContent.includes(pattern)) {
+                    const parts = originalContent.split(pattern);
+                    if (parts.length >= 2) {
+                        thoughtProcessFallback = parts[0].trim();
+                        finalAnswerFallback = parts.slice(1).join(pattern).trim();
+                        break;
+                    }
+                }
+            }
+            
+            // Clean up thought process (remove headers)
+            const thoughtHeaders = ['**DEEP THINKING BREAKDOWN**', 'DEEP THINKING BREAKDOWN', '🤔 **DEEP THINKING BREAKDOWN**', '🤔 DEEP THINKING BREAKDOWN'];
+            for (const header of thoughtHeaders) {
+                thoughtProcessFallback = thoughtProcessFallback.replace(header, '').trim();
+            }
+            
+            if (thoughtProcessFallback && finalAnswerFallback) {
+                console.log('Using fallback parsing for deep thinking content');
+                
+                // Parse the content properly for display
+                const renderEmojiMarkdown = (text) => {
+                    if (text.includes('```')) {
+                        return parseCodeBlocks(text);
+                    }
+                    
+                    const renderer = new marked.Renderer();
+                    const originalText = renderer.text;
+                    const originalLink = renderer.link;
+                    renderer.link = function(href, title, text) {
+                        const link = originalLink.call(this, href, title, text);
+                        return link.replace('<a ', '<a target="_blank" rel="noopener noreferrer" ');
+                    };
+
+                    renderer.text = function(text) {
+                        return originalText.call(this, text);
+                    };
+
+                    return marked.parse(text, { renderer });
+                };
+                
+                // Create the new deepthink container design
+                const styledContent = `
+                    <div class="deepthink-container">
+                        <div class="deepthink-header" onclick="toggleDeepThink(this.parentElement)">
+                            <div class="deepthink-icon">
+                                <svg width="16" height="16" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg">
+                                    <!-- Central circle -->
+                                    <circle cx="128" cy="128" r="16" />
+                                    <!-- Three ellipses forming the React atom -->
+                                    <ellipse rx="50" ry="120" cx="128" cy="128" transform="rotate(0 128 128)" />
+                                    <ellipse rx="50" ry="120" cx="128" cy="128" transform="rotate(60 128 128)" />
+                                    <ellipse rx="50" ry="120" cx="128" cy="128" transform="rotate(120 128 128)" />
+                                </svg>
+                            </div>
+                            <div class="deepthink-title">Thought Process</div>
+                            <div class="deepthink-caret">
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M7 10l5 5 5-5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                </svg>
+                            </div>
+                        </div>
+                        <div class="deepthink-content">
+                            ${renderEmojiMarkdown(thoughtProcessFallback)}
+                        </div>
+                    </div>
+                    <div class="final-answer-container">
+                        ${renderEmojiMarkdown(finalAnswerFallback)}
+                    </div>
+                `;
+                
+                // Replace the content with the styled version
+                console.log('Replacing messageContent.innerHTML with styled content');
+                console.log('Styled content preview:', styledContent.substring(0, 200));
+                messageContent.innerHTML = styledContent;
+                
+                // Verify the content was replaced
+                console.log('After replacement, messageContent.innerHTML length:', messageContent.innerHTML.length);
+                
+                // Initially collapse the thought process
+                const deepthinkContainer = messageContent.querySelector('.deepthink-container');
+                if (deepthinkContainer) {
+                    console.log('Found deepthink container after replacement');
+                    // deepthinkContainer.classList.add('collapsed'); // Now open by default
+                } else {
+                    console.log('No deepthink container found after replacement');
+                }
+            } else {
+                // Last resort: put everything in final answer
+                console.log('Using last resort: putting all content in final answer');
+                styleDeepThinkingResponseFallback(messageContent);
+            }
+        } else {
+            console.log('No deep thinking indicators found, trying fallback');
+            styleDeepThinkingResponseFallback(messageContent);
+        }
+    }
+}
+
+// Function to style deep thinking responses when AI only provides breakdown
+function styleDeepThinkingResponseFallback(messageContent) {
+    // Get the original content from the parent element's data attribute
+    const messageDiv = messageContent.closest('.message');
+    const originalContent = messageDiv ? messageDiv.getAttribute('data-original-content') : '';
+    
+    if (!originalContent) {
+        console.log('No original content found, cannot style deep thinking fallback response');
+        return;
+    }
+    
+    console.log('Styling deep thinking fallback response with new deepthink container');
+    
+    // Extract the breakdown content
+    let breakdown = '';
+    const breakdownPatterns = [
+        '**DEEP THINKING BREAKDOWN**',
+        'DEEP THINKING BREAKDOWN',
+        '**THOUGHT PROCESS**',
+        'THOUGHT PROCESS',
+        '🤔 **DEEP THINKING BREAKDOWN**',
+        '🤔 DEEP THINKING BREAKDOWN'
+    ];
+    
+    for (const pattern of breakdownPatterns) {
+        if (originalContent.includes(pattern)) {
+            breakdown = originalContent.replace(pattern, '').trim();
+            console.log('Found breakdown pattern:', pattern);
+            break;
+        }
+    }
+    
+    if (breakdown) {
+        console.log('Successfully extracted breakdown');
+        
+        // Parse the content properly for display
+        const renderEmojiMarkdown = (text) => {
+            if (text.includes('```')) {
+                return parseCodeBlocks(text);
+            }
+            
+            const renderer = new marked.Renderer();
+            const originalText = renderer.text;
+            const originalLink = renderer.link;
+            renderer.link = function(href, title, text) {
+                const link = originalLink.call(this, href, title, text);
+                return link.replace('<a ', '<a target="_blank" rel="noopener noreferrer" ');
+            };
+
+            renderer.text = function(text) {
+                return originalText.call(this, text);
+            };
+
+            return marked.parse(text, { renderer });
+        };
+        
+        // Generate unique ID for this container
+        const containerId = 'deepthink-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+        
+        // Create the new deepthink container design
+        const styledContent = `
+            <div class="deepthink-container" id="${containerId}">
+                <div class="deepthink-header" onclick="toggleDeepThink(this.parentElement)">
+                    <div class="deepthink-icon">
+                        <svg width="16" height="16" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg">
+                            <!-- Central circle -->
+                            <circle cx="128" cy="128" r="16" />
+                            <!-- Three ellipses forming the React atom -->
+                            <ellipse rx="50" ry="120" cx="128" cy="128" transform="rotate(0 128 128)" />
+                            <ellipse rx="50" ry="120" cx="128" cy="128" transform="rotate(60 128 128)" />
+                            <ellipse rx="50" ry="120" cx="128" cy="128" transform="rotate(120 128 128)" />
+                        </svg>
+                    </div>
+                    <div class="deepthink-title">Thought Process</div>
+                    <div class="deepthink-caret">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M7 10l5 5 5-5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </div>
+                </div>
+                <div class="deepthink-content">
+                    ${renderEmojiMarkdown(breakdown)}
+                </div>
+            </div>
+        `;
+        
+        // Replace the content with the styled version
+        console.log('Replacing messageContent.innerHTML with styled content');
+        console.log('Styled content preview:', styledContent.substring(0, 200));
+        messageContent.innerHTML = styledContent;
+        
+        // Verify the content was replaced
+        console.log('After replacement, messageContent.innerHTML length:', messageContent.innerHTML.length);
+        
+        // Restore saved state from localStorage (default to expanded)
+        const deepthinkContainer = messageContent.querySelector('.deepthink-container');
+        if (deepthinkContainer) {
+            console.log('Found deepthink container after replacement (fallback)');
+            console.log('Container ID:', containerId);
+            const key = `deepthink-${containerId}`;
+            const savedState = localStorage.getItem(key);
+            console.log('Saved state from localStorage:', key, '=', savedState);
+            if (savedState === 'collapsed') {
+                deepthinkContainer.classList.add('collapsed');
+                console.log('Applied collapsed state to container (fallback)');
+            } else {
+                console.log('No saved state or expanded, keeping open by default (fallback)');
+            }
+            // If no saved state or 'expanded', keep it open by default
+        } else {
+            console.log('No deepthink container found after replacement (fallback)');
+        }
+    } else {
+        console.log('Failed to extract breakdown content');
+    }
+}
+
+// Function to toggle deepthink container visibility
+function toggleDeepThink(container) {
+    console.log('toggleDeepThink called with container:', container);
+    
+    // Generate a unique ID for this container if it doesn't have one
+    if (!container.id) {
+        container.id = 'deepthink-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+        console.log('Generated new ID for container:', container.id);
+    }
+    
+    const containerId = container.id;
+    console.log('Container ID:', containerId);
+    console.log('Current collapsed state:', container.classList.contains('collapsed'));
+    
+    if (container.classList.contains('collapsed')) {
+        // Expand the container
+        container.classList.remove('collapsed');
+        console.log('Expanding container');
+        // Save expanded state to localStorage
+        const key = `deepthink-${containerId}`;
+        localStorage.setItem(key, 'expanded');
+        console.log('Saved to localStorage:', key, '= expanded');
+        console.log('localStorage after save:', localStorage.getItem(key));
+    } else {
+        // Collapse the container
+        container.classList.add('collapsed');
+        console.log('Collapsing container');
+        // Save collapsed state to localStorage
+        const key = `deepthink-${containerId}`;
+        localStorage.setItem(key, 'collapsed');
+        console.log('Saved to localStorage:', key, '= collapsed');
+        console.log('localStorage after save:', localStorage.getItem(key));
+    }
+    
+    // Debug: show all deepthink localStorage entries
+    const deepthinkKeys = Object.keys(localStorage).filter(key => key.startsWith('deepthink-'));
+    console.log('All deepthink localStorage entries:', deepthinkKeys);
+    deepthinkKeys.forEach(key => {
+        console.log(`${key}: ${localStorage.getItem(key)}`);
+    });
+}
+
+// Function to check if current model supports deep thinking
+function checkModelDeepThinkingSupport() {
+    if (!currentModelInfo) {
+        console.log('No model info available, disabling deep thinking');
+        return false;
+    }
+    
+    const supportsDeepThinking = currentModelInfo.supports_deep_thinking === true;
+    console.log(`Model ${currentModelInfo.display_name} deep thinking support:`, supportsDeepThinking);
+    return supportsDeepThinking;
+}
+
+// Function to update thinking toggle button state
+function updateThinkingToggleButton() {
+    const thinkingToggleBtn = document.getElementById('thinking-toggle-btn');
+    if (!thinkingToggleBtn) {
+        console.log('Thinking toggle button not found');
+        return;
+    }
+    
+    const supportsDeepThinking = checkModelDeepThinkingSupport();
+    
+    if (supportsDeepThinking) {
+        // Enable the button
+        thinkingToggleBtn.disabled = false;
+        thinkingToggleBtn.classList.remove('disabled');
+        thinkingToggleBtn.style.opacity = '1';
+        thinkingToggleBtn.style.cursor = 'pointer';
+        console.log('Deep thinking toggle button enabled');
+    } else {
+        // Disable the button
+        thinkingToggleBtn.disabled = true;
+        thinkingToggleBtn.classList.add('disabled');
+        thinkingToggleBtn.style.opacity = '0.5';
+        thinkingToggleBtn.style.cursor = 'not-allowed';
+        
+        // If deep thinking was enabled, disable it
+        if (deepThinkingMode) {
+            deepThinkingMode = false;
+            localStorage.setItem('deepThinkingMode', 'false');
+            thinkingToggleBtn.classList.remove('active');
+            thinkingToggleBtn.setAttribute('data-tooltip', 'Not supported by current model');
+        } else {
+            thinkingToggleBtn.setAttribute('data-tooltip', 'Not supported by current model');
+        }
+        console.log('Deep thinking toggle button disabled - model does not support deep thinking');
+    }
+}
+
+// Setup thinking toggle button
+const thinkingToggleBtn = document.getElementById('thinking-toggle-btn');
+if (thinkingToggleBtn) {
+    console.log('Thinking toggle button found, setting up event listener');
+    
+    // Remove any existing event listeners
+    thinkingToggleBtn.replaceWith(thinkingToggleBtn.cloneNode(true));
+    
+    // Get the fresh reference
+    const freshThinkingToggleBtn = document.getElementById('thinking-toggle-btn');
+    
+    // Add new event listener
+    freshThinkingToggleBtn.addEventListener('click', (event) => {
+        event.stopPropagation();
+        console.log('Thinking toggle button clicked');
+        
+        // Check if model supports deep thinking
+        if (!checkModelDeepThinkingSupport()) {
+            console.log('Model does not support deep thinking, ignoring click');
+            return;
+        }
+        
+        // Toggle deep thinking mode
+        deepThinkingMode = !deepThinkingMode;
+        
+        // Save to localStorage
+        localStorage.setItem('deepThinkingMode', deepThinkingMode.toString());
+        
+        // Update button appearance
+        if (deepThinkingMode) {
+            freshThinkingToggleBtn.classList.add('active');
+            freshThinkingToggleBtn.setAttribute('data-tooltip', 'Deep Think, Think For Better Reasoning');
+            console.log('Deep thinking mode enabled');
+        } else {
+            freshThinkingToggleBtn.classList.remove('active');
+            freshThinkingToggleBtn.setAttribute('data-tooltip', 'Deep Think, Think For Better Reasoning');
+            console.log('Deep thinking mode disabled');
+        }
+    });
+} else {
+    console.log('Thinking toggle button not found');
+}
+
+// Function to animate typing effect
+async function animateTyping(container, content, renderFunction) {
+    const chunkSize = 20; // Smaller chunks for smoother animation
+    let currentContent = '';
+    
+    for (let i = 0; i < content.length; i += chunkSize) {
+        if (!isResponding) break; // Stop if response was cancelled
+        
+        currentContent += content.substring(i, i + chunkSize);
+        
+        // Render the current content
+        if (renderFunction) {
+            container.innerHTML = renderFunction(currentContent);
+        } else {
+            container.textContent = currentContent;
+        }
+        
+        // Apply syntax highlighting if hljs is available
+        if (typeof hljs !== 'undefined') {
+            container.querySelectorAll('pre code').forEach(block => {
+                try {
+                    const codeText = block.textContent;
+                    if (codeText.includes('<') && codeText.includes('>')) {
+                        block.textContent = codeText;
+                    } else {
+                        const originalText = block.textContent;
+                        hljs.highlightElement(block);
+                        if (block.innerHTML !== originalText) {
+                            block.textContent = originalText;
+                        }
+                    }
+                } catch (e) {
+                    console.error('Error applying syntax highlighting:', e);
+                }
+            });
+        }
+        
+        // Scroll to bottom
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+        
+        // Wait before next chunk - slower animation
+        await new Promise(r => setTimeout(r, 200));
+    }
 }
