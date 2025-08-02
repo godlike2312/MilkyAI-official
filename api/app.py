@@ -6,6 +6,18 @@ import os
 import secrets
 import time
 import traceback
+import base64
+import io
+import asyncio
+
+# Try to import Firebase with error handling
+try:
+    import firebase_admin
+    from firebase_admin import credentials, auth
+    FIREBASE_AVAILABLE = True
+except ImportError as e:
+    print(f"Warning: Firebase not available: {e}")
+    FIREBASE_AVAILABLE = False
 
 # Try to import edge-tts with error handling
 try:
@@ -27,8 +39,73 @@ def initialize_firebase():
         print("Firebase already initialized, skipping initialization")
         return True
     
-    # Temporarily disable Firebase for testing
-    print("Firebase initialization disabled for testing")
+    # Check if Firebase is available
+    if not FIREBASE_AVAILABLE:
+        print("Firebase not available, skipping initialization")
+        return False
+    
+    try:
+        # Check if FIREBASE_SERVICE_ACCOUNT is set as an environment variable
+        if os.environ.get('FIREBASE_SERVICE_ACCOUNT'):
+            # Use the service account info from environment variable
+            print("Initializing Firebase with service account from environment variable")
+            try:
+                service_account_info = json.loads(os.environ.get('FIREBASE_SERVICE_ACCOUNT'))
+                cred = credentials.Certificate(service_account_info)
+                firebase_admin.initialize_app(cred)
+                firebase_initialized = True
+                print("Successfully initialized Firebase with service account from environment variable")
+                return True
+            except json.JSONDecodeError as je:
+                print(f"Error parsing FIREBASE_SERVICE_ACCOUNT environment variable: {str(je)}")
+                print("The environment variable must contain valid JSON")
+            except Exception as env_error:
+                print(f"Error initializing Firebase with environment variable: {str(env_error)}")
+        
+        # Try service account files in order of preference
+        service_account_paths = [
+            'firebase-service-account.json'
+        ]
+        
+        for path in service_account_paths:
+            try:
+                print(f"Attempting to initialize Firebase with service account from: {path}")
+                cred = credentials.Certificate(path)
+                firebase_admin.initialize_app(cred)
+                firebase_initialized = True
+                print(f"Successfully initialized Firebase with service account from: {path}")
+                return True
+            except FileNotFoundError:
+                print(f"Service account file not found at: {path}")
+                continue
+            except ValueError as ve:
+                if "already exists" in str(ve):
+                    print("Firebase app already initialized")
+                    firebase_initialized = True
+                    return True
+                else:
+                    print(f"ValueError initializing Firebase with {path}: {str(ve)}")
+                    continue
+            except Exception as e:
+                print(f"Error initializing Firebase with {path}: {str(e)}")
+                continue
+        
+        # If we get here, try application default credentials
+        print("Attempting to initialize Firebase with application default credentials")
+        firebase_admin.initialize_app()
+        firebase_initialized = True
+        print("Successfully initialized Firebase with application default credentials")
+        return True
+    except ValueError as ve:
+        if "already exists" in str(ve):
+            print("Firebase app already initialized")
+            firebase_initialized = True
+            return True
+        else:
+            print(f"ValueError initializing Firebase: {str(ve)}")
+    except Exception as e:
+        print(f"Error initializing Firebase: {str(e)}")
+    
     return False
         
     # try:
@@ -357,9 +434,69 @@ def make_openrouter_request(url, headers, data=None, method="POST", max_retries=
 # Helper function to verify Firebase ID token
 def verify_firebase_token(request_obj):
     """Verify Firebase ID token from Authorization header"""
-    # Temporarily disable Firebase verification for testing
-    print("Firebase token verification disabled for testing")
-    return {"uid": "test-user-id"}
+    # Check if Firebase is available
+    if not FIREBASE_AVAILABLE:
+        print("Firebase not available, using test user")
+        return {"uid": "test-user-id"}
+    
+    # Get the Authorization header
+    auth_header = request_obj.headers.get('Authorization')
+    if not auth_header or not auth_header.startswith('Bearer '):
+        print("No valid Authorization header found")
+        return None
+    
+    # Extract the token
+    token = auth_header.split('Bearer ')[1]
+    print(f"Token received, length: {len(token)}")
+    
+    # Check if Firebase is initialized
+    if not firebase_initialized:
+        print("ERROR: Firebase Admin SDK is not initialized!")
+        # Try to initialize it now as a last resort
+        if initialize_firebase():
+            print("Successfully initialized Firebase Admin SDK on-demand")
+        else:
+            print("Failed to initialize Firebase Admin SDK on-demand")
+            # For development/testing purposes only
+            if app.debug:
+                print("WARNING: Running in debug mode. Bypassing token verification.")
+                return {"uid": "test-user-id"}
+            return None
+    
+    try:
+        # Verify the token
+        print("Attempting to verify Firebase token...")
+        decoded_token = auth.verify_id_token(token)
+        print(f"Token verified successfully for user: {decoded_token.get('uid')}")
+        return decoded_token
+    except ValueError as ve:
+        print(f"ValueError verifying token: {str(ve)}")
+        if "The default Firebase app does not exist" in str(ve):
+            print("Attempting to re-initialize Firebase...")
+            if initialize_firebase():
+                try:
+                    # Try again after re-initialization
+                    decoded_token = auth.verify_id_token(token)
+                    print(f"Token verified successfully after re-initialization for user: {decoded_token.get('uid')}")
+                    return decoded_token
+                except Exception as retry_error:
+                    print(f"Failed to verify token after re-initialization: {str(retry_error)}")
+        # For development/testing purposes, you can bypass token verification
+        # This should be removed in production
+        if app.debug:
+            print("WARNING: Running in debug mode. Bypassing token verification.")
+            # Create a mock decoded token with a user ID
+            return {"uid": "test-user-id"}
+        return None
+    except Exception as e:
+        print(f"Error verifying token: {str(e)}")
+        # For development/testing purposes, you can bypass token verification
+        # This should be removed in production
+        if app.debug:
+            print("WARNING: Running in debug mode. Bypassing token verification.")
+            # Create a mock decoded token with a user ID
+            return {"uid": "test-user-id"}
+        return None
     
     # # Get the Authorization header
     # auth_header = request_obj.headers.get('Authorization')
