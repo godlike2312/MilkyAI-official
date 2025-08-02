@@ -591,6 +591,57 @@ main {
     padding: 20px;
     scrollbar-width: thin;
     scrollbar-color: rgba(var(--bg-secondary-rgb), 0.8) rgba(var(--bg-secondary-rgb), 0.2);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    min-height: 100%;
+}
+
+/* Initial state - center input when no chat history */
+.messages-container.initial-state {
+    justify-content: center;
+    align-items: center;
+}
+
+.messages-container.initial-state .messages {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+.messages-container.initial-state .message.system {
+    background: none;
+    border: none;
+    box-shadow: none;
+    margin-bottom: 2rem;
+}
+
+.messages-container.initial-state .message-content {
+    font-size: 1.2rem;
+    color: var(--text-secondary);
+    line-height: 1.6;
+}
+
+/* Chat state - normal layout after first message */
+.messages-container.chat-state {
+    justify-content: flex-start;
+}
+
+.messages-container.chat-state .messages {
+    width: 100%;
+}
+
+.messages-container.chat-state .message.system {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 @media (max-width: 768px) {

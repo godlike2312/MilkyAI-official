@@ -20,6 +20,29 @@ function toggleSidebar() {
     }
 }
 
+// Function to manage chat UI state
+function updateChatUIState() {
+    const messagesContainer = document.querySelector('.messages-container');
+    const messages = document.querySelector('.messages');
+    const userMessages = messages.querySelectorAll('.message.user');
+    const assistantMessages = messages.querySelectorAll('.message.assistant');
+    
+    // Check if we have any user or assistant messages (excluding system message)
+    const hasChatHistory = userMessages.length > 0 || assistantMessages.length > 0;
+    
+    if (hasChatHistory && isInitialState) {
+        // Transition from initial to chat state
+        isInitialState = false;
+        messagesContainer.classList.remove('initial-state');
+        messagesContainer.classList.add('chat-state');
+    } else if (!hasChatHistory && !isInitialState) {
+        // Transition from chat to initial state
+        isInitialState = true;
+        messagesContainer.classList.remove('chat-state');
+        messagesContainer.classList.add('initial-state');
+    }
+}
+
 // Add event listeners for sidebar toggle
 if (sidebarToggle) {
     sidebarToggle.addEventListener('click', toggleSidebar);
@@ -37,6 +60,9 @@ let controller = null;
 let currentChatId = null;
 let currentUser = null;
 
+// Chat UI state management
+let isInitialState = true;
+
 // Deep thinking mode state
 let deepThinkingMode = false;
 let currentModel = 'deepseek/deepseek-chat-v3-0324:free'; // Default model with full ID
@@ -44,6 +70,12 @@ let currentModelInfo = null;
 
 // Load deep thinking mode from localStorage on page load
 document.addEventListener('DOMContentLoaded', () => {
+    // Initialize chat UI state
+    const messagesContainer = document.querySelector('.messages-container');
+    if (messagesContainer) {
+        messagesContainer.classList.add('initial-state');
+    }
+    
     // Test localStorage functionality
     console.log('Testing localStorage functionality...');
     const testKey = 'test-deepthink';
@@ -1232,6 +1264,8 @@ function addMessage(content, type, isOfflineMessage = false, modelId = null) {
         console.warn('highlight-all.min.js not loaded, skipping syntax highlighting');
     }
 
+    // Update chat UI state after adding message
+    updateChatUIState();
 }
 
 // Function to sanitize HTML content to prevent execution
@@ -2909,6 +2943,9 @@ async function loadChat(chatId) {
         while (chatMessages.children.length > 0) {
             chatMessages.removeChild(chatMessages.lastChild);
         }
+        
+        // Reset to initial state after clearing messages
+        updateChatUIState();
         
         try {
             // Get chat data
