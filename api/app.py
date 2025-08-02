@@ -202,19 +202,14 @@ DEEP_THINKING_PROMPT = """You are NumAI with deep thinking capabilities. When de
 
 **DEEP THINKING BREAKDOWN**
 
-[FIRST: Analyze the user's request thoroughly]
 Hmm, let me understand what the user is asking for... [Analyze their specific request, what they're trying to achieve, what context they might need, and what type of response would be most helpful]
 
-[SECOND: Think through the problem step by step]
 Now, let me think about this carefully... [Go through your reasoning process - consider different approaches, potential challenges, what information is needed, what assumptions to make, and how to structure the response]
 
-[THIRD: Consider edge cases and alternatives]
 What if... [Think about potential issues, edge cases, alternative solutions, or different perspectives on the problem]
 
-[FOURTH: Plan the response structure]
 For the best answer, I should... [Plan how to organize the response, what examples to include, what format would be most helpful]
 
-[FIFTH: Synthesize the approach]
 Based on my analysis, the best approach is... [Summarize your thinking and explain why this approach makes sense]
 
 
@@ -232,7 +227,9 @@ CRITICAL RULES:
 7. Make your thinking process detailed and thorough - don't rush through it
 8. If you cannot provide a complete answer, still include both sections with your best attempt
 9. Always analyze the user's request first before diving into the solution
-10. DO NOT use emojis in the headers - use plain text only"""
+10. DO NOT use emojis in the headers - use plain text only
+11. DO NOT include template placeholders like [FIRST:], [SECOND:], etc. - replace them with your actual thinking
+12. Write your thinking process naturally without using numbered steps or template markers"""
 
 # Default system prompt
 DEFAULT_SYSTEM_PROMPT = """You are NumAI, a helpful assistant . When a user says only 'hello', respond with just 'Hello! How can I help you today?' and nothing more. when user says 'What is NumAI', repond with this information 'NumAI is Service That provides AI Model use For free' when user says 'how many models you or NumAI have', respond 'there is a catogory 1. Ultra fast model , 2. Text Based models , 3. Coders , In Ultra fast catagory 1. Milky 8B , 2.Milky 70B , 3.Milky S2, 4. Milky 2o, In Text Based Catagory 1. Milky 3.1 , 2. Milky Small, 3. Milky 3.7, 4. Milky V2, in Coders Catagory 1. MilkyCoder Pro, 2. Milky 3.7 Sonnet, 3. Sonnet Seek, 4. Milky Fast' For all other queries, respond normally with appropriate markdown formatting: **bold text** for titles, backticks for code, and proper code blocks with language specification. Use the actual native emoji characters (e.g. 😊, ❤️, 🚀) instead of emoji shortcodes like :smile: or :heart:. Avoid markdown-style emoji codes. Use emojis directly as Unicode characters. but dont add them starting of your responses. When providing code examples, make it clear these are standalone examples."""
@@ -835,10 +832,13 @@ def chat():
                 if not validated_messages:
                     print(f"[Cohere] Warning: No valid messages in chat history, using default")
                     # If no valid messages, create a new conversation with default messages
+                    system_prompt = get_system_prompt(selected_model_info, deep_thinking_mode)
+                    print(f"[Cohere] Model supports deep thinking: {selected_model_info.get('supports_deep_thinking', False)}")
+                    print(f"[Cohere] Selected system prompt type: {'Deep Thinking' if deep_thinking_mode and selected_model_info.get('supports_deep_thinking', False) else 'Default'}")
                     cohere_messages = [
                         {
                             "role": "SYSTEM",
-                            "message": "You are NumAI, a helpful assistant . When a user says only 'hello', respond with just 'Hello! How can I help you today?' and nothing more. For all other queries, respond normally with appropriate markdown formatting: **bold text** for titles, backticks for code, and proper code blocks with language specification. use the actual native emoji characters (e.g. 😊, ❤️, 🚀) instead of emoji shortcodes like :smile: or :heart:. Avoid markdown-style emoji codes. Use emojis directly as Unicode characters. but dont add them starting of your responses. When providing code examples, make it clear these are standalone examples."
+                            "message": system_prompt
                         },
                         {
                             "role": "USER",
@@ -862,10 +862,13 @@ def chat():
                     
                     # Check if we have a system message, add one if not
                     if not has_system_message:
-                        print(f"[Cohere] Adding default system message")
+                        print(f"[Cohere] Adding system message for deep thinking: {deep_thinking_mode}")
+                        system_prompt = get_system_prompt(selected_model_info, deep_thinking_mode)
+                        print(f"[Cohere] Model supports deep thinking: {selected_model_info.get('supports_deep_thinking', False)}")
+                        print(f"[Cohere] Selected system prompt type: {'Deep Thinking' if deep_thinking_mode and selected_model_info.get('supports_deep_thinking', False) else 'Default'}")
                         cohere_messages.insert(0, {
                             "role": "SYSTEM",
-                            "message": "You are NumAI, a helpful assistant . When a user says only 'hello', respond with just 'Hello! How can I help you today?' and nothing more. For all other queries, respond normally with appropriate markdown formatting: **bold text** for titles, backticks for code, and proper code blocks with language specification. use the actual native emoji characters (e.g. 😊, ❤️, 🚀) instead of emoji shortcodes like :smile: or :heart:. Avoid markdown-style emoji codes. Use emojis directly as Unicode characters. but dont add them starting of your responses. When providing code examples, make it clear these are standalone examples."
+                            "message": system_prompt
                         })
                     
                     # Ensure the last message is from the user
@@ -879,10 +882,13 @@ def chat():
                     print(f"[Cohere] Converted chat history to Cohere format: {len(cohere_messages)} messages")
             else:
                 # If no chat history, create a new conversation
+                system_prompt = get_system_prompt(selected_model_info, deep_thinking_mode)
+                print(f"[Cohere] Model supports deep thinking: {selected_model_info.get('supports_deep_thinking', False)}")
+                print(f"[Cohere] Selected system prompt type: {'Deep Thinking' if deep_thinking_mode and selected_model_info.get('supports_deep_thinking', False) else 'Default'}")
                 cohere_messages = [
                     {
                         "role": "SYSTEM",
-                        "message": "You are NumAI, a helpful assistant . When a user says only 'hello', respond with just 'Hello! How can I help you today?' and nothing more. For all other queries, respond normally with appropriate markdown formatting: **bold text** for titles, backticks for code, and proper code blocks with language specification. use the actual native emoji characters (e.g. 😊, ❤️, 🚀) instead of emoji shortcodes like :smile: or :heart:. Avoid markdown-style emoji codes. Use emojis directly as Unicode characters. but dont add them starting of your responses. When providing code examples, make it clear these are standalone examples."
+                        "message": system_prompt
                     },
                     {
                         "role": "USER",
@@ -890,11 +896,55 @@ def chat():
                     }
                 ]
             
+            # Add specific instructions for deep thinking mode with Cohere
+            preamble = "You are NumAI, a helpful assistant. Use markdown formatting and emoji shortcodes in your responses."
+            if deep_thinking_mode and selected_model_info.get('supports_deep_thinking', False):
+                preamble = """You are NumAI with deep thinking capabilities. You MUST ALWAYS follow this exact format for EVERY SINGLE RESPONSE:
+
+**DEEP THINKING BREAKDOWN**
+
+Hmm, let me understand what the user is asking for... [Analyze their specific request, what they're trying to achieve, what context they might need, and what type of response would be most helpful]
+
+Now, let me think about this carefully... [Go through your reasoning process - consider different approaches, potential challenges, what information is needed, what assumptions to make, and how to structure the response]
+
+What if... [Think about potential issues, edge cases, alternative solutions, or different perspectives on the problem]
+
+For the best answer, I should... [Plan how to organize the response, what examples to include, what format would be most helpful]
+
+Based on my analysis, the best approach is... [Summarize your thinking and explain why this approach makes sense]
+
+
+**FINAL ANSWER**
+
+[Your comprehensive final answer here, incorporating all the analysis above]
+
+CRITICAL RULES:
+1. You MUST ALWAYS include BOTH the breakdown AND the final answer sections
+2. You MUST ALWAYS use the exact headers: "**DEEP THINKING BREAKDOWN**" and "**FINAL ANSWER**" (NO EMOJIS)
+3. You MUST NEVER skip the final answer section
+4. The response MUST end with the final answer
+5. Write your thought process in a natural, conversational way as if you're thinking out loud
+6. Use phrases like "Hmm, the user wants...", "Let me think about this...", "What if...", "I should consider..."
+7. Make your thinking process detailed and thorough - don't rush through it
+8. If you cannot provide a complete answer, still include both sections with your best attempt
+9. Always analyze the user's request first before diving into the solution
+10. DO NOT use emojis in the headers - use plain text only
+11. FOR EVERY SINGLE USER QUERY, you MUST start with "**DEEP THINKING BREAKDOWN**" and end with "**FINAL ANSWER**"
+12. This is NOT optional - you MUST follow this format for every response
+13. Even for simple greetings like "hello" or "hi", you MUST still provide the full breakdown and final answer
+14. The breakdown should be at least 3-4 sentences long, showing your actual thinking process
+15. Never skip the thinking process - always show your work
+16. IMPORTANT: This format is MANDATORY for every single response, regardless of the query complexity
+17. You are REQUIRED to show your thinking process for every user input
+18. The deep thinking breakdown is NOT optional - it's a requirement for every response
+19. DO NOT include template placeholders like [FIRST:], [SECOND:], etc. - replace them with your actual thinking
+20. Write your thinking process naturally without using numbered steps or template markers"""
+            
             cohere_data = json.dumps({
                 "model": selected_model_info['id'],
                 "message": user_input,
                 "chat_history": cohere_messages,
-                "preamble": "You are NumAI, a helpful assistant. Use markdown formatting and emoji shortcodes in your responses."
+                "preamble": preamble
             })
             try:
                 print(f"[Cohere] Sending POST to https://api.cohere.ai/v1/chat with data: {cohere_data}")
