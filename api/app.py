@@ -1313,6 +1313,7 @@ CRITICAL RULES:
                     "response_format": {
                         "type": "text"
                     }
+                }
                 
                 # Add temperature for deep thinking mode
                 if deep_thinking_mode and selected_model_info.get('supports_deep_thinking', False):
