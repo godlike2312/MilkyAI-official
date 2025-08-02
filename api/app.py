@@ -1,4 +1,5 @@
 from flask import Flask, send_from_directory, render_template, request, jsonify, redirect, url_for, session, send_file
+from flask_cors import CORS
 import requests
 import json
 import os
@@ -10,7 +11,14 @@ from firebase_admin import credentials, auth
 import base64
 import io
 import asyncio
-import edge_tts
+
+# Try to import edge-tts with error handling
+try:
+    import edge_tts
+    EDGE_TTS_AVAILABLE = True
+except ImportError as e:
+    print(f"Warning: edge-tts not available: {e}")
+    EDGE_TTS_AVAILABLE = False
 
 # Initialize Firebase Admin SDK before creating the Flask app
 # This ensures Firebase is initialized exactly once and before any routes are defined
@@ -89,12 +97,20 @@ def initialize_firebase():
     return firebase_initialized
 
 # Initialize Firebase before creating the Flask app
-firebase_init_success = initialize_firebase()
-print(f"Firebase initialization {'successful' if firebase_init_success else 'FAILED'}")
+try:
+    firebase_init_success = initialize_firebase()
+    print(f"Firebase initialization {'successful' if firebase_init_success else 'FAILED'}")
+except Exception as e:
+    print(f"Firebase initialization failed with exception: {e}")
+    firebase_init_success = False
+    # Don't let Firebase initialization failure crash the app
 
 # Create Flask app after Firebase initialization
 app = Flask(__name__, static_folder='./static', template_folder='./templates')  # Updated paths for Vercel with symbolic links
 app.secret_key = secrets.token_hex(16)  # Generate a secure secret key for sessions
+
+# Enable CORS for all routes
+CORS(app, origins=['*'], supports_credentials=True)
 
 # OpenRouter API key - read from environment variable
 API_KEY = os.environ.get('OPENROUTER_API_KEY', '')
@@ -429,7 +445,15 @@ def status():
 # The actual authentication check is handled by Firebase in the frontend
 @app.route('/')
 def index():
-    return render_template('index.html')
+    try:
+        return render_template('index.html')
+    except Exception as e:
+        print(f"Error rendering index template: {e}")
+        return jsonify({
+            'error': 'Template rendering failed',
+            'message': 'The application is running but template rendering failed',
+            'timestamp': time.time()
+        }), 500
 
 # New endpoint to verify and cache token once per session
 @app.route('/api/verify-token', methods=['POST'])
@@ -1622,6 +1646,10 @@ def image_gen_api():
 
 @app.route('/api/edge-tts', methods=['POST'])
 def edge_tts_api():
+    # Check if edge-tts is available
+    if not EDGE_TTS_AVAILABLE:
+        return jsonify({'error': 'Text-to-speech service is not available'}), 503
+    
     data = request.json
     text = data.get('text')
     requested_voice = data.get('voice')
@@ -1707,6 +1735,41 @@ def edge_tts_api():
     except Exception as e:
         print(f'Edge TTS error: {str(e)}')
         return jsonify({'error': str(e)}), 500
+
+# Add a health check endpoint for Vercel
+@app.route('/api/health', methods=['GET'])
+def health_check():
+    """Health check endpoint for Vercel"""
+    try:
+        return jsonify({
+            'status': 'healthy',
+            'timestamp': time.time(),
+            'firebase_initialized': firebase_initialized,
+            'edge_tts_available': EDGE_TTS_AVAILABLE,
+            'environment': os.environ.get('VERCEL_ENV', 'development')
+        })
+    except Exception as e:
+        return jsonify({
+            'status': 'unhealthy',
+            'error': str(e),
+            'timestamp': time.time()
+        }), 500
+
+# Add error handlers
+@app.errorhandler(404)
+def not_found(error):
+    return jsonify({'error': 'Not found'}), 404
+
+@app.errorhandler(500)
+def internal_error(error):
+    return jsonify({'error': 'Internal server error'}), 500
+
+@app.errorhandler(Exception)
+def handle_exception(e):
+    """Handle all unhandled exceptions"""
+    print(f"Unhandled exception: {str(e)}")
+    traceback.print_exc()
+    return jsonify({'error': 'Internal server error'}), 500
 
 # Set environment variables for Vercel deployment
 if os.environ.get('VERCEL_ENV'):
