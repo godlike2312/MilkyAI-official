@@ -21,7 +21,7 @@ except ImportError as e:
 
 # Try to import edge-tts with error handling
 try:
-import edge_tts
+    import edge_tts
     EDGE_TTS_AVAILABLE = True
 except ImportError as e:
     print(f"Warning: edge-tts not available: {e}")
@@ -174,8 +174,8 @@ def initialize_firebase():
 
 # Initialize Firebase before creating the Flask app
 try:
-firebase_init_success = initialize_firebase()
-print(f"Firebase initialization {'successful' if firebase_init_success else 'FAILED'}")
+    firebase_init_success = initialize_firebase()
+    print(f"Firebase initialization {'successful' if firebase_init_success else 'FAILED'}")
 except Exception as e:
     print(f"Firebase initialization failed with exception: {e}")
     firebase_init_success = False
@@ -586,7 +586,7 @@ def status():
 @app.route('/')
 def index():
     try:
-    return render_template('index.html')
+        return render_template('index.html')
     except Exception as e:
         print(f"Error rendering index template: {e}")
         return jsonify({

@@ -969,9 +969,160 @@ async function exportChats() {
 
 // Confirm delete all chats
 function confirmDeleteAllChats() {
-    if (confirm('Are you sure you want to delete all your chats? This action cannot be undone.')) {
-        deleteAllChats();
+    // Create custom confirmation dialog
+    const dialog = document.createElement('div');
+    dialog.classList.add('custom-confirm-dialog');
+    
+    dialog.innerHTML = `
+        <div class="custom-confirm-content">
+            <div class="custom-confirm-header">
+                <i class="fas fa-exclamation-triangle" style="color: #e74c3c; margin-right: 10px;"></i>
+                Delete All Chats
+            </div>
+            <div class="custom-confirm-message">
+                Are you sure you want to delete all your chats? This action cannot be undone and will permanently remove all your conversation history.
+            </div>
+            <div class="custom-confirm-actions">
+                <button class="custom-confirm-btn custom-confirm-cancel">Cancel</button>
+                <button class="custom-confirm-btn custom-confirm-delete">Delete All</button>
+            </div>
+        </div>
+    `;
+    
+    // Add styles if not already added
+    if (!document.querySelector('#custom-confirm-styles')) {
+        const style = document.createElement('style');
+        style.id = 'custom-confirm-styles';
+        style.textContent = `
+            .custom-confirm-dialog {
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background-color: rgba(0, 0, 0, 0.7);
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                z-index: 2000;
+                opacity: 0;
+                visibility: hidden;
+                transition: opacity 0.3s, visibility 0.3s;
+            }
+            
+            .custom-confirm-dialog.active {
+                opacity: 1;
+                visibility: visible;
+            }
+            
+            .custom-confirm-content {
+                background-color: #222323;
+                border-radius: 12px;
+                padding: 25px;
+                width: 90%;
+                max-width: 450px;
+                box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+                border: 1px solid #333;
+            }
+            
+            .custom-confirm-header {
+                font-size: 20px;
+                font-weight: bold;
+                margin-bottom: 15px;
+                color: #e74c3c;
+                display: flex;
+                align-items: center;
+            }
+            
+            .custom-confirm-message {
+                margin-bottom: 25px;
+                line-height: 1.6;
+                color: #e0e0e0;
+                font-size: 14px;
+            }
+            
+            .custom-confirm-actions {
+                display: flex;
+                justify-content: flex-end;
+                gap: 12px;
+            }
+            
+            .custom-confirm-btn {
+                padding: 10px 20px;
+                border: none;
+                border-radius: 6px;
+                cursor: pointer;
+                font-weight: 500;
+                font-size: 14px;
+                transition: all 0.2s;
+            }
+            
+            .custom-confirm-cancel {
+                background-color: #444;
+                color: #e0e0e0;
+            }
+            
+            .custom-confirm-cancel:hover {
+                background-color: #555;
+            }
+            
+            .custom-confirm-delete {
+                background-color: #e74c3c;
+                color: white;
+            }
+            
+            .custom-confirm-delete:hover {
+                background-color: #c0392b;
+            }
+            
+            body.light-mode .custom-confirm-content {
+                background-color: #ffffff;
+                border: 1px solid #ddd;
+            }
+            
+            body.light-mode .custom-confirm-message {
+                color: #333;
+            }
+            
+            body.light-mode .custom-confirm-cancel {
+                background-color: #f1f1f1;
+                color: #333;
+            }
+            
+            body.light-mode .custom-confirm-cancel:hover {
+                background-color: #e1e1e1;
+            }
+        `;
+        document.head.appendChild(style);
     }
+    
+    document.body.appendChild(dialog);
+    
+    // Show dialog
+    setTimeout(() => dialog.classList.add('active'), 10);
+    
+    // Handle cancel button
+    const cancelBtn = dialog.querySelector('.custom-confirm-cancel');
+    cancelBtn.onclick = () => {
+        dialog.classList.remove('active');
+        setTimeout(() => document.body.removeChild(dialog), 300);
+    };
+    
+    // Handle delete button
+    const deleteBtn = dialog.querySelector('.custom-confirm-delete');
+    deleteBtn.onclick = async () => {
+        dialog.classList.remove('active');
+        setTimeout(() => document.body.removeChild(dialog), 300);
+        await deleteAllChats();
+    };
+    
+    // Close dialog when clicking outside
+    dialog.onclick = (e) => {
+        if (e.target === dialog) {
+            dialog.classList.remove('active');
+            setTimeout(() => document.body.removeChild(dialog), 300);
+        }
+    };
 }
 
 // Delete all chats
@@ -1013,9 +1164,59 @@ async function deleteAllChats() {
 
 // Confirm delete account
 function confirmDeleteAccount() {
-    if (confirm('Are you sure you want to delete your account? This will permanently remove all your data and cannot be undone.')) {
-        deleteAccount();
-    }
+    // Create custom confirmation dialog
+    const dialog = document.createElement('div');
+    dialog.classList.add('custom-confirm-dialog');
+    
+    dialog.innerHTML = `
+        <div class="custom-confirm-content">
+            <div class="custom-confirm-header">
+                <i class="fas fa-user-times" style="color: #e74c3c; margin-right: 10px;"></i>
+                Delete Account
+            </div>
+            <div class="custom-confirm-message">
+                <strong>Warning:</strong> This action will permanently delete your account and all associated data including:
+                <ul style="margin: 10px 0; padding-left: 20px;">
+                    <li>All your chat conversations</li>
+                    <li>Your user profile and settings</li>
+                    <li>All saved preferences</li>
+                </ul>
+                This action cannot be undone. Are you absolutely sure you want to proceed?
+            </div>
+            <div class="custom-confirm-actions">
+                <button class="custom-confirm-btn custom-confirm-cancel">Cancel</button>
+                <button class="custom-confirm-btn custom-confirm-delete" style="background-color: #dc3545;">Delete Account</button>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(dialog);
+    
+    // Show dialog
+    setTimeout(() => dialog.classList.add('active'), 10);
+    
+    // Handle cancel button
+    const cancelBtn = dialog.querySelector('.custom-confirm-cancel');
+    cancelBtn.onclick = () => {
+        dialog.classList.remove('active');
+        setTimeout(() => document.body.removeChild(dialog), 300);
+    };
+    
+    // Handle delete button
+    const deleteBtn = dialog.querySelector('.custom-confirm-delete');
+    deleteBtn.onclick = async () => {
+        dialog.classList.remove('active');
+        setTimeout(() => document.body.removeChild(dialog), 300);
+        await deleteAccount();
+    };
+    
+    // Close dialog when clicking outside
+    dialog.onclick = (e) => {
+        if (e.target === dialog) {
+            dialog.classList.remove('active');
+            setTimeout(() => document.body.removeChild(dialog), 300);
+        }
+    };
 }
 
 // Delete account

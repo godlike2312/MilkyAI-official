@@ -20,29 +20,6 @@ function toggleSidebar() {
     }
 }
 
-// Function to manage chat UI state
-function updateChatUIState() {
-    const messagesContainer = document.querySelector('.messages-container');
-    const messages = document.querySelector('.messages');
-    const userMessages = messages.querySelectorAll('.message.user');
-    const assistantMessages = messages.querySelectorAll('.message.assistant');
-    
-    // Check if we have any user or assistant messages (excluding system message)
-    const hasChatHistory = userMessages.length > 0 || assistantMessages.length > 0;
-    
-    if (hasChatHistory && isInitialState) {
-        // Transition from initial to chat state
-        isInitialState = false;
-        messagesContainer.classList.remove('initial-state');
-        messagesContainer.classList.add('chat-state');
-    } else if (!hasChatHistory && !isInitialState) {
-        // Transition from chat to initial state
-        isInitialState = true;
-        messagesContainer.classList.remove('chat-state');
-        messagesContainer.classList.add('initial-state');
-    }
-}
-
 // Add event listeners for sidebar toggle
 if (sidebarToggle) {
     sidebarToggle.addEventListener('click', toggleSidebar);
@@ -60,9 +37,6 @@ let controller = null;
 let currentChatId = null;
 let currentUser = null;
 
-// Chat UI state management
-let isInitialState = true;
-
 // Deep thinking mode state
 let deepThinkingMode = false;
 let currentModel = 'deepseek/deepseek-chat-v3-0324:free'; // Default model with full ID
@@ -70,12 +44,6 @@ let currentModelInfo = null;
 
 // Load deep thinking mode from localStorage on page load
 document.addEventListener('DOMContentLoaded', () => {
-    // Initialize chat UI state
-    const messagesContainer = document.querySelector('.messages-container');
-    if (messagesContainer) {
-        messagesContainer.classList.add('initial-state');
-    }
-    
     // Test localStorage functionality
     console.log('Testing localStorage functionality...');
     const testKey = 'test-deepthink';
@@ -93,7 +61,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const thinkingToggleBtn = document.getElementById('thinking-toggle-btn');
         if (thinkingToggleBtn) {
             thinkingToggleBtn.classList.add('active');
-            thinkingToggleBtn.setAttribute('data-tooltip', 'Deep Think, Think For Better Reasoning');
+            thinkingToggleBtn.setAttribute('data-tooltip', 'Deep Thinking: ON (Ctrl+O)');
         }
     }
     
@@ -117,7 +85,62 @@ document.addEventListener('DOMContentLoaded', () => {
     setTimeout(() => {
         updateThinkingToggleButton();
     }, 1000);
+    
+    // Add keyboard shortcuts
+    addKeyboardShortcuts();
 });
+
+// Keyboard shortcuts function
+function addKeyboardShortcuts() {
+    document.addEventListener('keydown', (e) => {
+        // Only trigger shortcuts if not typing in input fields
+        const activeElement = document.activeElement;
+        const isTyping = activeElement && (
+            activeElement.tagName === 'INPUT' || 
+            activeElement.tagName === 'TEXTAREA' || 
+            activeElement.contentEditable === 'true'
+        );
+        
+        if (isTyping) return;
+        
+        // Ctrl+I: Create new chat
+        if (e.ctrlKey && e.key === 'i') {
+            e.preventDefault();
+            console.log('Keyboard shortcut: Ctrl+I - Creating new chat');
+            createNewChatSession();
+        }
+        
+        // Ctrl+O: Toggle deep thinking mode
+        if (e.ctrlKey && e.key === 'o') {
+            e.preventDefault();
+            console.log('Keyboard shortcut: Ctrl+O - Toggling deep thinking mode');
+            toggleDeepThinkingMode();
+        }
+    });
+}
+
+// Toggle deep thinking mode function
+function toggleDeepThinkingMode() {
+    const thinkingToggleBtn = document.getElementById('thinking-toggle-btn');
+    if (!thinkingToggleBtn) return;
+    
+    // Toggle the mode
+    deepThinkingMode = !deepThinkingMode;
+    
+    // Update localStorage
+    localStorage.setItem('deepThinkingMode', deepThinkingMode.toString());
+    
+    // Update button state
+    if (deepThinkingMode) {
+        thinkingToggleBtn.classList.add('active');
+        thinkingToggleBtn.setAttribute('data-tooltip', 'Deep Thinking: ON (Ctrl+O)');
+    } else {
+        thinkingToggleBtn.classList.remove('active');
+        thinkingToggleBtn.setAttribute('data-tooltip', 'Deep Thinking: OFF (Ctrl+O)');
+    }
+    
+    console.log('Deep thinking mode:', deepThinkingMode ? 'ON' : 'OFF');
+}
 
 // Offline indicator element
 const offlineIndicator = document.createElement('div');
@@ -1264,8 +1287,6 @@ function addMessage(content, type, isOfflineMessage = false, modelId = null) {
         console.warn('highlight-all.min.js not loaded, skipping syntax highlighting');
     }
 
-    // Update chat UI state after adding message
-    updateChatUIState();
 }
 
 // Function to sanitize HTML content to prevent execution
@@ -1501,19 +1522,60 @@ function addLoadingIndicator() {
     const loadingDiv = document.createElement('div');
     loadingDiv.classList.add('message', 'assistant', 'loading-message');
     
+    const loadingContent = document.createElement('div');
+    loadingContent.classList.add('message-content', 'loading-content');
+    
+    // Create loading stages
+    const loadingStages = [
+        { text: "Sending your request...", duration: 800, showLoader: true },
+        { text: "Processing...", duration: 1000, showLoader: false },
+        { text: "Getting your answer...", duration: 1200, showLoader: false }
+    ];
+    
+    let currentStage = 0;
+    const loadingText = document.createElement('div');
+    loadingText.classList.add('loading-text');
+    loadingText.textContent = loadingStages[0].text;
+    loadingText.setAttribute('data-text', loadingStages[0].text);
+    
     const loadingIndicator = document.createElement('div');
     loadingIndicator.classList.add('loading');
     
-    // Create a simple spinning circle (like DeepSeek)
+    // Create a simple spinning circle
     const circle = document.createElement('div');
     circle.classList.add('loading-circle');
     loadingIndicator.appendChild(circle);
     
-    loadingDiv.appendChild(loadingIndicator);
+    loadingContent.appendChild(loadingText);
+    loadingContent.appendChild(loadingIndicator);
+    loadingDiv.appendChild(loadingContent);
     chatMessages.appendChild(loadingDiv);
     
     // Scroll to the bottom of the chat
     chatMessages.scrollTop = chatMessages.scrollHeight;
+    
+    // Start the stage progression
+    const progressStages = () => {
+        if (currentStage < loadingStages.length - 1) {
+            currentStage++;
+            const stage = loadingStages[currentStage];
+            loadingText.textContent = stage.text;
+            loadingText.setAttribute('data-text', stage.text);
+            
+            // Show/hide loader based on stage
+            if (stage.showLoader) {
+                loadingIndicator.style.display = 'flex';
+            } else {
+                loadingIndicator.style.display = 'none';
+            }
+            
+            // Schedule next stage
+            setTimeout(progressStages, stage.duration);
+        }
+    };
+    
+    // Start progression after first stage
+    setTimeout(progressStages, loadingStages[0].duration);
     
     return loadingDiv;
 }
@@ -1625,6 +1687,7 @@ async function sendMessage(message) {
         removeLoadingIndicator(loadingIndicator);
 
         if (!response.ok) {
+            hideTypingIndicator();
             if (response.status === 401) {
                 throw new Error('Authentication error: API key may be missing or invalid');
             } else {
@@ -1657,6 +1720,13 @@ async function sendMessage(message) {
             gsap.to(messageDiv, { opacity: 1, y: 0, duration: 0.5, ease: 'power2.out' });
             chatMessages.scrollTop = chatMessages.scrollHeight;
             
+            // Show typing indicator immediately when AI starts responding
+            console.log('About to show typing indicator for message div:', messageDiv);
+            showTypingIndicator(messageDiv);
+            
+            // Add a small delay before processing content to show typing indicator
+            await new Promise(resolve => setTimeout(resolve, 500));
+            
 
 
             // Check if deep thinking mode is enabled and create container structure
@@ -1673,6 +1743,15 @@ async function sendMessage(message) {
                 const contentHash = btoa(contentText).replace(/[^a-zA-Z0-9]/g, '').substring(0, 12);
                 const containerId = 'deepthink-' + contentHash;
                 deepthinkContainer.id = containerId;
+                
+                // Create container for header and rainbow background
+                const deepthinkHeaderContainer = document.createElement('div');
+                deepthinkHeaderContainer.className = 'deepthink-header-container';
+                
+                // Create rainbow background element
+                const deepthinkRainbowBg = document.createElement('div');
+                deepthinkRainbowBg.className = 'deepthink-rainbow-bg';
+                deepthinkRainbowBg.id = 'rainbow-bg-' + containerId;
                 
                 const deepthinkHeader = document.createElement('div');
                 deepthinkHeader.className = 'deepthink-header';
@@ -1708,10 +1787,14 @@ async function sendMessage(message) {
                 deepthinkHeader.appendChild(deepthinkTitle);
                 deepthinkHeader.appendChild(deepthinkCaret);
                 
+                // Add rainbow background and header to container
+                deepthinkHeaderContainer.appendChild(deepthinkRainbowBg);
+                deepthinkHeaderContainer.appendChild(deepthinkHeader);
+                
                 const deepthinkContent = document.createElement('div');
                 deepthinkContent.className = 'deepthink-content';
                 
-                deepthinkContainer.appendChild(deepthinkHeader);
+                deepthinkContainer.appendChild(deepthinkHeaderContainer);
                 deepthinkContainer.appendChild(deepthinkContent);
                 
                 // Restore saved state from localStorage
@@ -2282,6 +2365,7 @@ async function sendMessage(message) {
 
     } catch (error) {
         console.error('Error:', error);
+        hideTypingIndicator();
         if (error.name !== 'AbortError') {
             if (error.message.includes('API key')) {
                 addMessage('Error: The API key is missing or invalid. Please check the server configuration.', 'system');
@@ -2313,6 +2397,9 @@ if (stopBtn) {
             
             // Set isResponding to false to stop the typing animation
             isResponding = false;
+            
+            // Hide typing indicator
+            hideTypingIndicator();
             
             // Add a small delay before showing the system message to allow the typing animation to complete
             setTimeout(() => {
@@ -2485,6 +2572,43 @@ userInput.addEventListener('blur', () => {
 
 // ===== Chat Management Functions =====
 
+// Function to load user profile picture
+function loadUserProfilePicture(user) {
+    const userAvatar = document.getElementById('user-avatar');
+    const userAvatarFallback = document.getElementById('user-avatar-fallback');
+    const userName = document.getElementById('user-name');
+    
+    if (!userAvatar || !userAvatarFallback || !userName) return;
+    
+    // Update user name
+    userName.textContent = user.displayName || user.email || 'User';
+    
+    // Check if user has a profile picture
+    if (user.photoURL) {
+        // Show the actual profile picture
+        userAvatar.src = user.photoURL;
+        userAvatar.style.display = 'block';
+        userAvatarFallback.style.display = 'none';
+        
+        // Handle image load errors
+        userAvatar.onerror = () => {
+            console.log('Failed to load profile picture, showing fallback');
+            userAvatar.style.display = 'none';
+            userAvatarFallback.style.display = 'flex';
+        };
+        
+        // Handle successful image load
+        userAvatar.onload = () => {
+            console.log('Profile picture loaded successfully');
+        };
+    } else {
+        // Show fallback icon
+        console.log('No profile picture available, showing fallback');
+        userAvatar.style.display = 'none';
+        userAvatarFallback.style.display = 'flex';
+    }
+}
+
 // Initialize chat functionality
 async function initializeChats() {
     console.log('Initializing chats...');
@@ -2493,6 +2617,9 @@ async function initializeChats() {
         if (user) {
             console.log('User authenticated:', user.email);
             currentUser = user;
+            
+            // Load user profile picture
+            loadUserProfilePicture(user);
             
             // Clean up any existing listener before setting up a new one
             if (window.chatUnsubscribe) {
@@ -2701,7 +2828,8 @@ function setupChatListener(userId) {
                 });
                 
                 // After initial load, if we have chats but none is selected, load the first one
-                if (chatHistory.length > 0 && !currentChatId) {
+                // But only if we're not in the middle of creating a new chat
+                if (chatHistory.length > 0 && !currentChatId && !window.isCreatingNewChat) {
                     console.log('Loading first chat from history');
                     loadChat(chatHistory[0].id);
                 }
@@ -2894,6 +3022,9 @@ async function createNewChatSession() {
         return;
     }
     
+    // Set flag to prevent automatic chat loading
+    window.isCreatingNewChat = true;
+    
     try {
         console.log('Creating new chat for user:', currentUser.uid);
         // Create a new chat in Firebase
@@ -2901,22 +3032,122 @@ async function createNewChatSession() {
         
         if (chatId) {
             console.log('New chat created with ID:', chatId);
-            // Load the new chat immediately
-            loadChat(chatId);
-            console.log('Loaded new chat');
+            
+            // Clear any existing messages first
+            while (chatMessages.children.length > 0) {
+                chatMessages.removeChild(chatMessages.lastChild);
+            }
+            
+            // Add a welcome message to the new chat
+            addMessage('Hello! I\'m NumAI. How can I help you today?', 'system');
+            
+            // Set up the new chat state
+            currentChatId = chatId;
+            localStorage.setItem('currentChatId', chatId);
+            console.log('Set currentChatId to:', chatId);
+            
+            // Update URL with the new chat ID
+            const newUrl = `${window.location.origin}${window.location.pathname}?chat=${chatId}`;
+            window.history.pushState({ chatId: chatId }, '', newUrl);
+            console.log('Updated URL to:', newUrl);
+            
+            // Clear current messages and add welcome message
+            while (chatMessages.children.length > 0) {
+                chatMessages.removeChild(chatMessages.lastChild);
+            }
+            
+            // Add welcome message to the new chat
+            addMessage("Hello! I'm NumAI. How can I help you today?", 'system');
+            
+            // Reset chat history for the new chat
+            chatHistory = [
+                { 
+                    role: 'system', 
+                    content: `You are NumAI, an advanced AI assistant on a web platform, powered by a blend of cutting-edge language models optimized for diverse tasks. Your tone is professional, approachable, and user-friendly, tailoring responses for both technical and non-technical audiences. Your goal is to provide clear, concise, and accurate answers that directly address user queries, you can use emojis in your response.
+
+Follow these strict behavioral and formatting rules:
+
+1. **Response Guidelines**:
+   - Answer queries directly and concisely, avoiding unnecessary elaboration.
+   - When the user says only "hello", respond exactly with: Hello! How can I help you today? — No extra words, emojis, or formatting.
+   - For vague or unclear queries, ask a single, polite follow-up question to clarify the user's intent.
+   - For sensitive, unethical, or unsupported requests, respond politely with: "I'm unable to assist with that request. Can I help with something else?"
+
+2. **Formatting Rules**:
+   - Use proper Markdown formatting: **bold** for section titles or emphasis, *italics* for tips or subtle notes, backticks for inline code like \`example\`.
+   - Use triple backticks for code blocks only when code is explicitly requested.
+
+3. **Emoji Usage**:
+   - Use native emojis like 😊 ✅ sparingly to enhance clarity, highlight key points, or add warmth to casual responses.
+   - Avoid emojis in formal, technical, or error-handling responses to maintain professionalism.
+
+4. **Character and Scope**:
+   - Always stay in character as NumAI, a versatile and reliable assistant.
+   - Never refer to other AI systems or models unless explicitly asked.
+   - Provide factual and helpful responses across a wide range of topics.
+
+5. **Error Handling**:
+   - If a query exceeds your capabilities, respond with: "I don't have enough information to answer that fully, but I can help with [related topic] or find more details if needed. What would you like to explore?"
+   - For repetitive or unclear follow-ups, gently guide the user to rephrase: "I'm here to help! Could you rephrase or provide more details to ensure I address your question accurately?"`
+}
+            ];
+            
+            console.log('New chat set up and ready:', chatId);
+            
+            // Clear the flag after a short delay to allow the listener to process
+            setTimeout(() => {
+                window.isCreatingNewChat = false;
+                console.log('Cleared isCreatingNewChat flag');
+            }, 1000);
+            
+            // Small delay to ensure sidebar is updated
+            setTimeout(() => {
+                console.log('Updating sidebar highlighting for chat:', chatId);
+                // Update active state in sidebar again to ensure it's highlighted
+                const chatItems = document.querySelectorAll('.chat-item');
+                console.log('Found chat items:', chatItems.length);
+                
+                chatItems.forEach(item => {
+                    const itemId = item.getAttribute('data-id');
+                    console.log('Checking chat item:', itemId, 'against:', chatId);
+                    if (itemId === chatId) {
+                        item.classList.add('active');
+                        item.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                        console.log('Activated chat item:', itemId);
+                    } else {
+                        item.classList.remove('active');
+                    }
+                });
+                
+                console.log('New chat should now be active:', chatId);
+            }, 500);
+            
+            // Focus on the input field for immediate typing
+            const userInput = document.getElementById('user-input');
+            if (userInput) {
+                userInput.focus();
+            }
+            
+            // Show a toast notification
+            showToast('New chat created!', 2000);
             
             // Note: The chat will be added to the sidebar automatically by the real-time listener
         } else {
             console.error('Failed to create new chat: No chat ID returned');
+            showToast('Failed to create new chat', 3000);
         }
     } catch (error) {
         console.error('Error creating new chat:', error);
+        showToast('Error creating new chat', 3000);
     }
 }
 
 // Load a specific chat
 async function loadChat(chatId) {
-    if (!chatId) return;
+    if (!chatId) {
+        console.log('No chat ID provided to loadChat');
+        return;
+    }
     
     try {
         console.log('Loading chat:', chatId);
@@ -2934,6 +3165,8 @@ async function loadChat(chatId) {
         document.querySelectorAll('.chat-item').forEach(item => {
             if (item.getAttribute('data-id') === chatId) {
                 item.classList.add('active');
+                // Scroll the chat item into view if it's not visible
+                item.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
             } else {
                 item.classList.remove('active');
             }
@@ -2944,19 +3177,21 @@ async function loadChat(chatId) {
             chatMessages.removeChild(chatMessages.lastChild);
         }
         
-        // Reset to initial state after clearing messages
-        updateChatUIState();
-        
         try {
             // Get chat data
+            console.log('Getting chat data for:', chatId);
             const chat = await getChat(chatId);
             
             if (chat) {
+                console.log('Chat data retrieved:', chat);
                 // Get messages from the subcollection
+                console.log('Getting messages for chat:', chatId);
                 const messages = await getChatMessages(chatId);
+                console.log('Messages retrieved:', messages.length, 'messages');
                 
                 // Add system welcome message if no messages
                 if (messages.length === 0) {
+                    console.log('No messages found, adding welcome message');
                     addMessage("Hello! I'm NumAI, How can I help you today?", 'system');
                 } else {
                     // Add messages from chat history and rebuild chat history array
@@ -3474,9 +3709,10 @@ function confirmDeleteChat(chatId) {
             }
         } catch (error) {
             console.error('Error deleting chat:', error);
+        } finally {
+            // Always close the dialog after action
+            dialog.classList.remove('active');
         }
-        
-        dialog.classList.remove('active');
     };
     
     // Close dialog when clicking outside
@@ -4992,11 +5228,11 @@ if (thinkingToggleBtn) {
         // Update button appearance
         if (deepThinkingMode) {
             freshThinkingToggleBtn.classList.add('active');
-            freshThinkingToggleBtn.setAttribute('data-tooltip', 'Deep Think, Think For Better Reasoning');
+            freshThinkingToggleBtn.setAttribute('data-tooltip', 'Deep Thinking: ON (Ctrl+O)');
             console.log('Deep thinking mode enabled');
         } else {
             freshThinkingToggleBtn.classList.remove('active');
-            freshThinkingToggleBtn.setAttribute('data-tooltip', 'Deep Think, Think For Better Reasoning');
+            freshThinkingToggleBtn.setAttribute('data-tooltip', 'Deep Thinking: OFF (Ctrl+O)');
             console.log('Deep thinking mode disabled');
         }
     });
@@ -5004,13 +5240,120 @@ if (thinkingToggleBtn) {
     console.log('Thinking toggle button not found');
 }
 
+// Function to start rainbow animation for deepthink header
+function startRainbowAnimation(containerId) {
+    const rainbowBg = document.getElementById('rainbow-bg-' + containerId);
+    if (rainbowBg) {
+        rainbowBg.classList.add('active');
+        console.log('Started rainbow animation for container:', containerId);
+    }
+}
+
+// Function to stop rainbow animation for deepthink header
+function stopRainbowAnimation(containerId) {
+    const rainbowBg = document.getElementById('rainbow-bg-' + containerId);
+    if (rainbowBg) {
+        rainbowBg.classList.remove('active');
+        console.log('Stopped rainbow animation for container:', containerId);
+    }
+}
+
+// Function to create typing indicator
+function createTypingIndicator() {
+    const typingIndicator = document.createElement('div');
+    typingIndicator.className = 'typing-indicator';
+    typingIndicator.id = 'typing-indicator';
+    
+    // Create three dots
+    for (let i = 0; i < 3; i++) {
+        const dot = document.createElement('div');
+        dot.className = 'dot';
+        typingIndicator.appendChild(dot);
+    }
+    
+    return typingIndicator;
+}
+
+// Function to show typing indicator
+function showTypingIndicator(messageDiv) {
+    console.log('Showing typing indicator for message div:', messageDiv);
+    const existingIndicator = document.getElementById('typing-indicator');
+    if (existingIndicator) {
+        console.log('Removing existing typing indicator');
+        existingIndicator.remove();
+    }
+    
+    const typingIndicator = createTypingIndicator();
+    const messageContent = messageDiv.querySelector('.message-content');
+    
+    if (messageContent) {
+        messageContent.appendChild(typingIndicator);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+        console.log('Typing indicator added to message content');
+    } else {
+        console.error('Message content not found for typing indicator');
+    }
+}
+
+// Function to hide typing indicator
+function hideTypingIndicator() {
+    const typingIndicator = document.getElementById('typing-indicator');
+    if (typingIndicator) {
+        console.log('Hiding typing indicator');
+        typingIndicator.remove();
+    } else {
+        console.log('No typing indicator found to hide');
+    }
+}
+
+// Test function to verify typing indicator works
+function testTypingIndicator() {
+    console.log('Testing typing indicator...');
+    const testMessageDiv = document.createElement('div');
+    testMessageDiv.classList.add('message', 'assistant');
+    const testMessageContent = document.createElement('div');
+    testMessageContent.classList.add('message-content');
+    testMessageDiv.appendChild(testMessageContent);
+    
+    chatMessages.appendChild(testMessageDiv);
+    showTypingIndicator(testMessageDiv);
+    
+    // Hide after 3 seconds for testing
+    setTimeout(() => {
+        hideTypingIndicator();
+        testMessageDiv.remove();
+        console.log('Test completed');
+    }, 3000);
+}
+
 // Function to animate typing effect
 async function animateTyping(container, content, renderFunction) {
     const chunkSize = 20; // Smaller chunks for smoother animation
     let currentContent = '';
     
+    console.log('Starting typing animation for container:', container);
+    
+    // Hide typing indicator when typing starts
+    hideTypingIndicator();
+    
+    // Check if this is deep think content and start rainbow animation
+    let containerId = null;
+    if (container.classList.contains('deepthink-content') || container.classList.contains('final-answer-container')) {
+        const deepthinkContainer = container.closest('.deepthink-container');
+        if (deepthinkContainer) {
+            containerId = deepthinkContainer.id;
+            startRainbowAnimation(containerId);
+        }
+    }
+    
     for (let i = 0; i < content.length; i += chunkSize) {
-        if (!isResponding) break; // Stop if response was cancelled
+        if (!isResponding) {
+            // Stop rainbow animation if response was cancelled
+            if (containerId) {
+                stopRainbowAnimation(containerId);
+            }
+            break; // Stop if response was cancelled
+        }
         
         currentContent += content.substring(i, i + chunkSize);
         
@@ -5046,5 +5389,10 @@ async function animateTyping(container, content, renderFunction) {
         
         // Wait before next chunk - slower animation
         await new Promise(r => setTimeout(r, 200));
+    }
+    
+    // Stop rainbow animation when typing is complete
+    if (containerId) {
+        stopRainbowAnimation(containerId);
     }
 }

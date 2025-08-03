@@ -247,29 +247,41 @@ main {
 
 /* Sidebar Header */
 .sidebar-header {
-    display: flex;
-    justify-content: center;
-    align-items: center;
     padding: 15px 20px 10px;
     border-bottom: none;
     margin-bottom: 0;
 }
+
+.header-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+}
+
 .sidebar-header a {
     text-decoration: none;
 }
-.sidebar-toggle-container {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    padding: 0 20px 10px;
 
-    margin-bottom: 15px;
+/* When sidebar is closed, keep logo and toggle on same line */
+.sidebar:not(.open) .header-content {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+}
+
+/* When sidebar is open, stack logo and toggle vertically */
+.sidebar.open .header-content {
+    flex-direction: column;
+    gap: 15px;
+    align-items: center;
 }
 
 .logo {
     display: flex;
     align-items: center;
     gap: 10px;
+    flex-shrink: 0;
 }
 
 .logo-image {
@@ -285,12 +297,20 @@ main {
     height: 40px;
     margin: 0 auto;
     display: block;
-    /* Ensure logo is always visible */
+}
+
+.sidebar:not(.open) .logo-image {
+    width: 32px;
+    height: 32px;
+    margin: 0;
+    display: block;
 }
 
 .logo:hover .logo-image {
     transform: rotate(20deg);
 }
+
+
 
 .logo i,
 .sidebar-icon {
@@ -303,9 +323,20 @@ main {
 .logo h1 {
     font-size: 20px;
     font-weight: 600;
-    color: rgb(121, 121, 121);
+    color: #e0e0e0;
     font-weight: 1000;
     cursor: pointer;
+    margin: 0;
+}
+
+/* Show text in both states */
+.sidebar .logo h1 {
+    display: block;
+}
+
+/* Light mode color for logo text */
+body.light-mode .logo h1 {
+    color: #333;
 }
 
 .robotic-font {
@@ -325,6 +356,7 @@ main {
     border-radius: 10px;
     cursor: pointer;
     transition: all 0.3s ease;
+    flex-shrink: 0;
 }
 
 .sidebar-toggle:hover {
@@ -358,6 +390,50 @@ main {
     transition: .3s;
 }
 
+.user-avatar {
+    position: relative;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    overflow: hidden;
+    flex-shrink: 0;
+}
+
+.avatar-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 50%;
+    display: none;
+}
+
+.avatar-fallback {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #444;
+    border-radius: 50%;
+    color: #e0e0e0;
+}
+
+.avatar-fallback svg {
+    width: 18px;
+    height: 18px;
+}
+
+/* When sidebar is open, show larger avatar */
+.sidebar.open .user-avatar {
+    width: 40px;
+    height: 40px;
+}
+
+.sidebar.open .avatar-fallback svg {
+    width: 22px;
+    height: 22px;
+}
+
 .user-info.hover {
     background: #616263;
 }
@@ -367,6 +443,16 @@ main {
     color: var(--text-color);
 }
 .user-info svg{stroke: var(--text-secondary);}
+
+/* Light mode avatar styles */
+body.light-mode .avatar-fallback {
+    background: #e0e0e0;
+    color: #666;
+}
+
+body.light-mode .avatar-fallback svg {
+    stroke: #666;
+}
 #user-name {
     font-size: 14px;
     font-weight: 500;
@@ -591,57 +677,6 @@ main {
     padding: 20px;
     scrollbar-width: thin;
     scrollbar-color: rgba(var(--bg-secondary-rgb), 0.8) rgba(var(--bg-secondary-rgb), 0.2);
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    min-height: 100%;
-}
-
-/* Initial state - center input when no chat history */
-.messages-container.initial-state {
-    justify-content: center;
-    align-items: center;
-}
-
-.messages-container.initial-state .messages {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
-    max-width: 600px;
-    margin: 0 auto;
-}
-
-.messages-container.initial-state .message.system {
-    background: none;
-    border: none;
-    box-shadow: none;
-    margin-bottom: 2rem;
-}
-
-.messages-container.initial-state .message-content {
-    font-size: 1.2rem;
-    color: var(--text-secondary);
-    line-height: 1.6;
-}
-
-/* Chat state - normal layout after first message */
-.messages-container.chat-state {
-    justify-content: flex-start;
-}
-
-.messages-container.chat-state .messages {
-    width: 100%;
-}
-
-.messages-container.chat-state .message.system {
-    background: var(--bg-secondary);
-    border: 1px solid var(--border-color);
-    border-radius: 12px;
-    padding: 1rem;
-    margin-bottom: 1rem;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 @media (max-width: 768px) {
@@ -1239,7 +1274,6 @@ h3.content-title {
     display: flex;
     align-items: center;
     background-color: transparent;
-    border: 1px solid var(--light-custom-border);
     align-self: flex-start;
     border-radius: 50px;
     border-top-left-radius: 14px;
@@ -2216,6 +2250,52 @@ body.light-mode .content-title::after {
     height: 30px;
 }
 
+.loading-content {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 15px;
+    padding: 20px;
+    width: 100%;
+}
+
+.loading-text {
+    font-size: 1em;
+    font-weight: 600;
+    text-align: left;
+    transition: opacity 0.3s ease;
+    position: relative;
+    overflow: hidden;
+    padding: 8px 0;
+    background: linear-gradient(145deg, #acacac 30%, #8a8a8a 45%, #f6f6f6 50%, #e0e0e0 55%, #e0e0e0 100%);
+    background-size: 300% auto;
+    color: transparent;
+    background-clip: text;
+    -webkit-background-clip: text;
+    animation: glint 2s linear infinite;
+}
+
+@keyframes glint {
+    0% {
+        background-position: -150% center;
+    }
+    100% {
+        background-position: 150% center;
+    }
+}
+
+/* Light mode adjustments for loading */
+body.light-mode .loading-text {
+    background: linear-gradient(
+        120deg,
+        #333 30%,
+        #333 45%,
+        #ffffff 50%,
+        #333 55%,
+        #333 100%
+    );
+}
+
 .loading-circle {
     position: absolute;
     width: 100%;
@@ -2288,7 +2368,7 @@ body.light-mode .content-title::after {
     visibility: hidden;
     transition: opacity 0.1s ease, visibility 0.1s ease, transform 0.1s ease;
     transform: translateX(-50%) translateY(5px);
-    z-index: 1000;
+    z-index: 10000;
 }
 
 [data-tooltip]:hover::before {
@@ -3312,6 +3392,47 @@ body.light-mode .CodeMirror-selected {
     min-width: 120px;
     max-width: 200px;
     border: 1px solid #404040;
+    position: relative;
+    z-index: 2;
+}
+
+/* Rainbow animation button that appears behind deepthink-header */
+.deepthink-rainbow-bg {
+    position: absolute;
+    top: -1px;
+    left: -1px;
+    right: 1px;
+    bottom: -1px;
+    background: linear-gradient(45deg, #a7a7a7, #3f3f3f, #ffd0d0, transparent);
+    background-size: 400% 400%;
+    border-radius: 7px;
+    z-index: 1;
+    opacity: 0;
+    animation: rainbow-flow 2s linear infinite;
+    transition: opacity 0.3s ease;
+}
+
+.deepthink-rainbow-bg.active {
+    opacity: 1;
+}
+
+@keyframes rainbow-flow {
+    0% {
+        background-position: 0% 50%;
+    }
+    50% {
+        background-position: 100% 50%;
+    }
+    100% {
+        background-position: 0% 50%;
+    }
+}
+
+/* Container to hold both the rainbow background and the header */
+.deepthink-header-container {
+    position: relative;
+    display: inline-block;
+    width: fit-content;
 }
 
 .deepthink-header:hover {
@@ -4039,4 +4160,56 @@ body.light-mode .final-answer-container pre code {
         padding: 0.4rem 0.6rem;
         font-size: 0.9rem;
     }
+}
+
+/* Typing indicator with small white circles */
+.typing-indicator {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 8px 12px;
+    background: #333;
+    border-radius: 6px;
+    width: fit-content;
+    margin: 8px 0;
+}
+
+.typing-indicator .dot {
+    width: 6px;
+    height: 6px;
+    background: #ffffff;
+    border-radius: 50%;
+    animation: typing-bounce 1.4s infinite ease-in-out;
+}
+
+.typing-indicator .dot:nth-child(1) {
+    animation-delay: -0.32s;
+}
+
+.typing-indicator .dot:nth-child(2) {
+    animation-delay: -0.16s;
+}
+
+.typing-indicator .dot:nth-child(3) {
+    animation-delay: 0s;
+}
+
+@keyframes typing-bounce {
+    0%, 80%, 100% {
+        transform: scale(0.8);
+        opacity: 0.5;
+    }
+    40% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+/* Light mode adjustments for typing indicator */
+body.light-mode .typing-indicator {
+    background: #f5f5f5;
+}
+
+body.light-mode .typing-indicator .dot {
+    background: #666;
 }

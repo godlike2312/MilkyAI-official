@@ -61,21 +61,20 @@
     <div class="container">
         <div class="sidebar">
             <div class="sidebar-header">
-                <a href="">
-                    <div class="logo">
-                        <img src="{{ url_for('static', filename='img/model-logos/milky-edge.svg') }}" alt="NumAI Logo"
-                            class="logo-image">
-                        <h1 class="robotic-font">NumAI</h1>
+                <div class="header-content">
+                    <a href="">
+                        <div class="logo">
+                            <img src="{{ url_for('static', filename='img/model-logos/milky-edge.svg') }}" alt="NumAI Logo"
+                                class="logo-image">
+                        </div>
+                    </a>
+                    <div class="sidebar-toggle" data-tooltip="Toggle Sidebar">
+                        <img src="{{ url_for('static', filename='img/sidebar-icon.svg') }}" alt="Toggle Sidebar">
                     </div>
-                </a>
-            </div>
-            <div class="sidebar-toggle-container">
-                <div class="sidebar-toggle" data-tooltip="Toggle Sidebar">
-                    <img src="{{ url_for('static', filename='img/sidebar-icon.svg') }}" alt="Toggle Sidebar">
                 </div>
             </div>
             <div class="outer-new-chat">
-                <div class="new-chat" data-tooltip="New Chat">
+                <div class="new-chat" data-tooltip="New Chat (Ctrl+I)">
                     <svg width="64" height="64" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg"
                         class="sidebar-icon">
                         <!-- Square background with rounded corners -->
@@ -129,14 +128,17 @@
             </div>
             <div class="user-profile">
                 <div class="user-info" style="cursor: pointer;" data-tooltip="Profile">
-                    <svg width="64" height="64" viewBox="0 0 24 24" class="sidebar-icon"
-                        xmlns="http://www.w3.org/2000/svg" fill="none" stroke="black" stroke-width="2"
-                        stroke-linecap="round" stroke-linejoin="round">
-                        <rect x="2" y="2" width="20" height="20" rx="5" />
-                        <circle cx="12" cy="9" r="3" />
-                        <path d="M4 20c0-4 3-6 8-6s8 2 8 6" />
-                    </svg>
-
+                    <div class="user-avatar">
+                        <img id="user-avatar" src="" alt="User Avatar" class="avatar-image">
+                        <div id="user-avatar-fallback" class="avatar-fallback">
+                            <svg width="24" height="24" viewBox="0 0 24 24" class="sidebar-icon"
+                                xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="2"
+                                stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="12" cy="8" r="5" />
+                                <path d="M20 21c0-2.5-2-4.5-4.5-4.5S11 18.5 11 21" />
+                            </svg>
+                        </div>
+                    </div>
                     <span id="user-name">User</span>
                 </div>
                 <button id="logout-btn" class="logout-btn" data-tooltip="Logout">
@@ -148,7 +150,6 @@
                         <path d="M10 14h11" />
                         <path d="M21 14l-3-3" />
                     </svg>
-
                 </button>
             </div>
         </div>
@@ -191,7 +192,7 @@
                                 </button>
                                 <input type="file" id="image-upload" accept="image/*" style="display: none;">
                                 <button id="thinking-toggle-btn" class="action-btn thinking-toggle-btn"
-                                    data-tooltip="Deep Thinking: OFF">
+                                    data-tooltip="Deep Thinking: OFF (Ctrl+O)">
                                     <i class="fas fa-brain"></i>
                                 </button>
                                 <button id="model-switch-btn" class="action-btn model-switch-btn"
