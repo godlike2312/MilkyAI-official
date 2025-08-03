@@ -225,6 +225,12 @@ MODEL_OPTIONS = {
         'description': 'NumAI Best Advanced Model',
         'supports_deep_thinking': True
     },
+    'deepseek/deepseek-r1:free': {
+        'id': 'deepseek/deepseek-r1:free',
+        'display_name': 'Mind Zephyr',
+        'description': 'NumAI Best Advanced Model',
+        'supports_deep_thinking': True
+    },
     'groq/llama3-8b': {
         'id': 'llama3-8b-8192',
         'display_name': 'NeuraNova-X',
@@ -1126,7 +1132,8 @@ CRITICAL RULES:
                     url="https://api.cohere.ai/v1/chat",
                     headers=cohere_headers,
                     data=cohere_data,
-                    timeout=20
+                    timeout=20,
+                    stream=True
                 )
                 print(f"[Cohere] Received response status: {cohere_response.status_code}")
                 print(f"[Cohere] Raw response: {cohere_response.text}")
@@ -1281,7 +1288,7 @@ CRITICAL RULES:
                     "messages": messages,
                     "response_format": {
                         "type": "text"
-                    }
+                    },
                 }
                 
                 # Add temperature for deep thinking mode
@@ -1303,7 +1310,7 @@ CRITICAL RULES:
                         data=request_data,
                         method="POST",
                         max_retries=2,  # Retry up to 2 times
-                        base_timeout=60  # Start with 60 second timeout
+                        base_timeout=60,  # Start with 60 second timeout
                     )
                     print(f"Successfully received response from model {model} after using retry mechanism")
                 except Exception as req_error:
@@ -1406,7 +1413,8 @@ CRITICAL RULES:
                     # Add temperature and other parameters for deep thinking
                     groq_params = {
                         "model": selected_model_info['id'],
-                        "messages": valid_messages
+                        "messages": valid_messages,
+                        "stream": True
                     }
                     
                     # Add temperature for deep thinking mode

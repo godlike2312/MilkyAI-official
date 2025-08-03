@@ -95,6 +95,7 @@ body.light-mode {
     --canvas-codemirror: #d7d7d7;
     --inline-code: none;
     --profile-bg: #0000002b;
+    --toast-bg: white;
     --in-custom-shadow: inset 0 0 20px rgb(214 214 214), inset 0 0 40px rgb(137 137 137);
     --setting-btn-bg: #1a1a1a;
     --setting-color: rgb(255, 255, 255);
@@ -109,7 +110,7 @@ body.light-mode {
     height: 100vh;
     max-width: 1400px;
     margin: 0 auto;
-    background: var(--custom-bg);
+    background: var(--bg-color);
     overflow: hidden;
 }
 
@@ -1295,6 +1296,7 @@ h3.content-title {
     align-items: center;
     padding: 0.1rem 0.5rem;
     border-bottom-right-radius: 0.5rem;
+    border: 1px solid var(--border-color);
 }
 
 .assistant {
@@ -2278,14 +2280,19 @@ body.light-mode .content-title::after {
 
 /* Light mode adjustments for loading */
 body.light-mode .loading-text {
-    background: linear-gradient(
-        120deg,
-        #333 30%,
-        #333 45%,
-        #ffffff 50%,
-        #333 55%,
-        #333 100%
-    );
+    background: linear-gradient(145deg, #000000 30%, #383838 45%, #4d4d4d 50%, #8f8f8f 55%, #3e3e3e 100%);
+    font-size: 1em;
+    font-weight: 600;
+    text-align: left;
+    transition: opacity 0.3s ease;
+    position: relative;
+    overflow: hidden;
+    padding: 8px 0;
+    background-size: 300% auto;
+    color: transparent;
+    background-clip: text;
+    -webkit-background-clip: text;
+    animation: glint 2s linear infinite;
 }
 
 .loading-circle {
@@ -2375,9 +2382,6 @@ body.light-mode .loading-text {
         max-width: 100%;
     }
 
-    .user {
-        padding: 0;
-    }
 }
 
 /* Offline indicator */
@@ -3490,7 +3494,7 @@ body.light-mode .CodeMirror-selected {
 }
 
 .deepthink-container.collapsed .deepthink-caret {
-    transform: rotate(-90deg);
+    transform: rotate(180deg);
 }
 
 .deepthink-content {
@@ -3511,7 +3515,7 @@ body.light-mode .CodeMirror-selected {
 
 .deepthink-content p {
     margin: 0 0 12px 0;
-    color: #d0d0d0;
+    color: #959595;
 }
 
 .deepthink-content p:last-child {

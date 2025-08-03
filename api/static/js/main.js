@@ -362,7 +362,7 @@ function showToast(message, duration = 3000) {
             if (toastContainer.children.length === 0) {
                 document.body.removeChild(toastContainer);
             }
-        }, 300);
+        }, 3000);
     }, duration);
 }
 
@@ -1428,9 +1428,9 @@ function addLoadingIndicator() {
     
     // Create loading stages
     const loadingStages = [
-        { text: "Sending your request...", duration: 800, showLoader: true },
-        { text: "Processing...", duration: 1000, showLoader: false },
-        { text: "Getting your answer...", duration: 1200, showLoader: false }
+        { text: "Sending request...", duration: 1000, showLoader: true },
+        { text: "Refining Prompt", duration: 1200, showLoader: false },
+        { text: "Processing..", duration: 1200, showLoader: false }
     ];
     
     let currentStage = 0;
@@ -5259,12 +5259,12 @@ function testTypingIndicator() {
         hideTypingIndicator();
         testMessageDiv.remove();
         console.log('Test completed');
-    }, 3000);
+    }, 300);
 }
 
 // Function to animate typing effect
 async function animateTyping(container, content, renderFunction) {
-    const chunkSize = 20; // Smaller chunks for smoother animation
+    const chunkSize = 40; // Smaller chunks for smoother animation
     let currentContent = '';
     
     console.log('Starting typing animation for container:', container);
@@ -5324,7 +5324,7 @@ async function animateTyping(container, content, renderFunction) {
         chatMessages.scrollTop = chatMessages.scrollHeight;
         
         // Wait before next chunk - slower animation
-        await new Promise(r => setTimeout(r, 200));
+        await new Promise(r => setTimeout(r, 100));
     }
     
     // Stop rainbow animation when typing is complete
