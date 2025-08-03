@@ -1568,22 +1568,15 @@ h3.content-title {
 .model-option {
     display: flex;
     align-items: center;
-    padding: 16px 18px;
-    /* Increased padding */
+    padding: .375rem 8px;
     border-radius: 12px;
-    /* More rounded corners */
     cursor: pointer;
     transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1);
-    /* Smoother animation curve */
     border-left: 4px solid transparent;
-    /* Slightly thicker indicator */
     background-color: var(--bg-tertiary);
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-    /* Subtle shadow for depth */
     position: relative;
-    /* For hover effects */
     overflow: hidden;
-    /* For background effects */
     margin-bottom: 0.4rem;
 }
 
@@ -1640,10 +1633,9 @@ h3.content-title {
 }
 
 .model-option-name {
-    font-weight: 600;
     margin-bottom: 4px;
     color: var(--text-color);
-    font-size: 14px;
+    font-size: 13px;
 }
 
 .model-option-description {

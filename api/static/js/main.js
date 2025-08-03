@@ -635,33 +635,14 @@ document.addEventListener('DOMContentLoaded', () => {
     // Add event listeners to model options
 const modelOptions = document.querySelectorAll('.model-option');
 
-// Map model names to their logo files
-const modelLogoMap = {
-    'Milky 3.1': '/static/img/model-logos/milky-3.1.svg',
-    'Milky Small': '/static/img/model-logos/milky-small.svg',
-    'Milky 3.7': '/static/img/model-logos/milky-3.7.svg',
-    'Milky V2': '/static/img/model-logos/milky-v2.svg',
-    'MilkyCoder Pro': '/static/img/model-logos/milkycoder-pro.svg',
-    'Milky 3.7 sonnet': '/static/img/model-logos/milky-3.7-sonnet.svg',
-    'Sonnet Seek': '/static/img/model-logos/sonnet-seek.svg',
-    'Milky Fast': '/static/img/model-logos/milky-fast.svg',
-    'Milky Edge': '/static/img/model-logos/milky-edge.svg',
-    'Milky Fast-7o': '/static/img/model-logos/milky-fast-7o.svg',
-    'Milky S2': '/static/img/model-logos/milky-s2-new.svg',
-    'Milky 2o': '/static/img/model-logos/milky-2o-new.svg',
-    'Milky 8B': '/static/img/model-logos/milky-8b-new.svg',
-    'Milky 70B': '/static/img/model-logos/milky-70b-new.svg'
-};
+// Map model names to their logo files (removed all logos)
+const modelLogoMap = {};
 
 // Map model IDs to their names for easier lookup
 const modelIdToNameMap = {
     'deepseek/deepseek-chat-v3-0324:free': 'Sonnet Seek',
-    'mistralai/mistral-small-3.2-24b-instruct:free': 'Milky Small',
-    'mistralai/devstral-small:free': 'Milky 3.7',
-    'google/gemma-3n-e4b-it:free': 'Milky V2',
     'agentica-org/deepcoder-14b-preview:free': 'MilkyCoder Pro',
-    'deepseek/deepseek-v3-base:free': 'Milky 3.7 sonnet',
-    'mistralai/mistral-7b-instruct:free': 'Milky Fast',
+    'deepseek/deepseek-r1-0528:free': 'Milky 3.7 sonnet',
     'cohere/command-r-plus': 'Milky S2',
     'cohere/command-r': 'Milky 2o',
     'groq/llama3-8b': 'Milky 8B',
@@ -674,44 +655,12 @@ modelOptions.forEach(option => {
     console.log(`Model: ${option.querySelector('.model-option-name').textContent}, ID: ${option.getAttribute('data-model-id')}`);
 });
 
-// Map models that have animated versions
-const animatedLogoMap = {
-    'Milky 3.1': '/static/img/model-logos/milky-3.1-animated.svg',
-    'Milky 3.7 sonnet': '/static/img/model-logos/milky-3.7-sonnet-animated.svg'
-};
+// Map models that have animated versions (removed all logos)
+const animatedLogoMap = {};
 
-// Function to update model icons with SVG logos
+// Function to update model icons (no icons needed since containers were removed)
 function updateModelIcons() {
-    // Update icons in the model switcher popup
-    modelOptions.forEach(option => {
-        const modelName = option.querySelector('.model-option-name').textContent;
-        const iconContainer = option.querySelector('.model-option-icon');
-        
-        if (modelName && iconContainer) {
-            // Clear existing content
-            iconContainer.innerHTML = '';
-            
-            // Check if we have a logo for this model
-            if (modelLogoMap[modelName]) {
-                // Create an image element for the SVG
-                const img = document.createElement('img');
-                img.src = modelLogoMap[modelName];
-                img.alt = `${modelName} logo`;
-                img.style.width = '100%';
-                img.style.height = '100%';
-                img.style.objectFit = 'contain';
-                
-                // Add the image to the icon container
-                iconContainer.appendChild(img);
-            } else {
-                // Fallback to the default icon
-                const icon = document.createElement('i');
-                icon.className = 'fas fa-robot';
-                iconContainer.appendChild(icon);
-            }
-        }
-    });
-    
+    // No icons to update since icon containers were removed from HTML
     // Update the current model icon in the switch button
     updateCurrentModelIcon();
 }
@@ -720,30 +669,9 @@ function updateModelIcons() {
 function updateCurrentModelIcon() {
     const currentModelIcon = document.getElementById('current-model-icon');
     if (currentModelIcon) {
-        // Clear existing content
-        currentModelIcon.innerHTML = '';
-        
-        // Get the current model name from the ID
-        const currentModelName = modelIdToNameMap[currentModel] || 'Unknown Model';
-        
-        // Check if we have a logo for this model
-        if (modelLogoMap[currentModelName]) {
-            // Create an image element for the SVG
-            const img = document.createElement('img');
-            img.src = modelLogoMap[currentModelName];
-            img.alt = `${currentModelName} logo`;
-            img.style.width = '100%';
-            img.style.height = '100%';
-            img.style.objectFit = 'contain';
-            
-            // Add the image to the icon container
-            currentModelIcon.appendChild(img);
-        } else {
-            // Fallback to the default icon
-            const icon = document.createElement('i');
-            icon.className = 'fas fa-robot';
-            currentModelIcon.appendChild(icon);
-        }
+        // Keep the existing SVG icon, don't override it
+        // The SVG icon is already set in the HTML
+        return;
     }
 }
 
@@ -759,16 +687,6 @@ function updateSelectedModelOption() {
         const selectedOption = document.querySelector(`.model-option[data-model-id="${currentModel}"]`);
         if (selectedOption) {
             selectedOption.classList.add('selected');
-            
-            // Check if this model has an animated version
-            const modelName = selectedOption.querySelector('.model-option-name').textContent;
-            const iconContainer = selectedOption.querySelector('.model-option-icon');
-            const img = iconContainer.querySelector('img');
-            
-            if (img && animatedLogoMap[modelName]) {
-                // Switch to the animated version
-                img.src = animatedLogoMap[modelName];
-            }
         }
     }
 }
@@ -791,15 +709,6 @@ modelOptions.forEach(option => {
             // Update selected state in UI
             modelOptions.forEach(opt => {
                 opt.classList.remove('selected');
-                
-                // Reset to static logo if it was animated
-                const optModelName = opt.querySelector('.model-option-name').textContent;
-                const optIconContainer = opt.querySelector('.model-option-icon');
-                const optImg = optIconContainer.querySelector('img');
-                
-                if (optImg && modelLogoMap[optModelName]) {
-                    optImg.src = modelLogoMap[optModelName];
-                }
             });
             
             option.classList.add('selected');
@@ -807,14 +716,6 @@ modelOptions.forEach(option => {
             // Get model name from the option
             const modelName = option.querySelector('.model-option-name').textContent;
             console.log('Selected model name:', modelName);
-            
-            // Update to animated logo if available
-            const iconContainer = option.querySelector('.model-option-icon');
-            const img = iconContainer.querySelector('img');
-            
-            if (img && animatedLogoMap[modelName]) {
-                img.src = animatedLogoMap[modelName];
-            }
             
             // Update model indicator
             updateModelIndicator(modelName);
@@ -2829,9 +2730,18 @@ function setupChatListener(userId) {
                 
                 // After initial load, if we have chats but none is selected, load the first one
                 // But only if we're not in the middle of creating a new chat
-                if (chatHistory.length > 0 && !currentChatId && !window.isCreatingNewChat) {
-                    console.log('Loading first chat from history');
+                // AND only if this is the initial load (not a subsequent update)
+                if (chatHistory.length > 0 && !currentChatId && !window.isCreatingNewChat && !window.chatListenerInitialized) {
+                    console.log('Loading first chat from history (initial load)');
+                    console.log('isCreatingNewChat flag:', window.isCreatingNewChat);
+                    console.log('currentChatId:', currentChatId);
                     loadChat(chatHistory[0].id);
+                }
+                
+                // Mark that the listener has been initialized
+                if (!window.chatListenerInitialized) {
+                    window.chatListenerInitialized = true;
+                    console.log('Chat listener initialized');
                 }
                 
                 // Save chat history to localStorage for backup persistence
@@ -3024,6 +2934,8 @@ async function createNewChatSession() {
     
     // Set flag to prevent automatic chat loading
     window.isCreatingNewChat = true;
+    // Reset the listener initialization flag to allow proper handling
+    window.chatListenerInitialized = false;
     
     try {
         console.log('Creating new chat for user:', currentUser.uid);
@@ -3038,28 +2950,32 @@ async function createNewChatSession() {
                 chatMessages.removeChild(chatMessages.lastChild);
             }
             
-            // Add a welcome message to the new chat
-            addMessage('Hello! I\'m NumAI. How can I help you today?', 'system');
-            
-            // Set up the new chat state
+            // Set up the new chat state FIRST
             currentChatId = chatId;
             localStorage.setItem('currentChatId', chatId);
             console.log('Set currentChatId to:', chatId);
+            console.log('Previous currentChatId was:', localStorage.getItem('currentChatId'));
             
             // Update URL with the new chat ID
             const newUrl = `${window.location.origin}${window.location.pathname}?chat=${chatId}`;
             window.history.pushState({ chatId: chatId }, '', newUrl);
             console.log('Updated URL to:', newUrl);
+            console.log('Current URL is now:', window.location.href);
             
-            // Clear current messages and add welcome message
+            // Clear current messages
+            console.log('Clearing chat messages...');
             while (chatMessages.children.length > 0) {
                 chatMessages.removeChild(chatMessages.lastChild);
             }
+            console.log('Chat messages cleared, count:', chatMessages.children.length);
             
             // Add welcome message to the new chat
+            console.log('Adding welcome message...');
             addMessage("Hello! I'm NumAI. How can I help you today?", 'system');
             
             // Reset chat history for the new chat
+            console.log('Resetting chat history array...');
+            console.log('Previous chatHistory length:', chatHistory.length);
             chatHistory = [
                 { 
                     role: 'system', 
@@ -3091,6 +3007,8 @@ Follow these strict behavioral and formatting rules:
    - For repetitive or unclear follow-ups, gently guide the user to rephrase: "I'm here to help! Could you rephrase or provide more details to ensure I address your question accurately?"`
 }
             ];
+            console.log('New chatHistory length:', chatHistory.length);
+            console.log('New chatHistory:', chatHistory);
             
             console.log('New chat set up and ready:', chatId);
             
@@ -3131,6 +3049,13 @@ Follow these strict behavioral and formatting rules:
             // Show a toast notification
             showToast('New chat created!', 2000);
             
+            // Test: Try to load the new chat to verify it works
+            console.log('Testing: Attempting to load the newly created chat...');
+            setTimeout(() => {
+                console.log('Testing: Loading chat', chatId);
+                loadChat(chatId);
+            }, 2000);
+            
             // Note: The chat will be added to the sidebar automatically by the real-time listener
         } else {
             console.error('Failed to create new chat: No chat ID returned');
@@ -3147,6 +3072,17 @@ async function loadChat(chatId) {
     if (!chatId) {
         console.log('No chat ID provided to loadChat');
         return;
+    }
+    
+    // Add stack trace to see where loadChat is being called from
+    console.log('loadChat called with:', chatId);
+    console.log('Call stack:', new Error().stack);
+    console.log('isCreatingNewChat flag:', window.isCreatingNewChat);
+    
+    // Clear the creating flag when manually loading a chat
+    if (window.isCreatingNewChat) {
+        console.log('Clearing isCreatingNewChat flag for manual chat load');
+        window.isCreatingNewChat = false;
     }
     
     try {

@@ -209,78 +209,47 @@ COHERE_API_KEY = os.environ.get('COHERE_API_KEY', '')
 MODEL_OPTIONS = {
     'deepseek/deepseek-chat-v3-0324:free': {
         'id': 'deepseek/deepseek-chat-v3-0324:free',
-        'display_name': 'GPT-4o',
-        'description': 'Advanced AI with strong reasoning and coding abilities',
-        'supports_deep_thinking': True
-    },
-    'mistralai/mistral-small-3.2-24b-instruct:free': {
-        'id': 'mistralai/mistral-small-3.2-24b-instruct:free',
-        'display_name': 'Reasoner 3.5',
-        'description': 'Powerful 24B model with excellent reasoning',
-        'supports_deep_thinking': True
-    },
-    'mistralai/devstral-small:free': {
-        'id': 'mistralai/devstral-small:free',
-        'display_name': 'Dev 2.4 sonnet',
-        'description': 'Specialized for coding and technical tasks',
-        'supports_deep_thinking': True
-    },
-    'mistralai/mistral-7b-instruct:free': {
-        'id': 'mistralai/mistral-7b-instruct:free',
-        'display_name': 'Milky Basic',
-        'description': 'Fast and efficient 7B model',
-        'supports_deep_thinking': True
-    },
-    'google/gemma-3n-e4b-it:free': {
-        'id': 'google/gemma-3n-e4b-it:free',
-        'display_name': 'Milky-S1',
-        'description': 'Google\'s latest model with strong reasoning',
+        'display_name': 'QuantumText Maestro',
+        'description': 'Advanced reasoning and coding capabilities',
         'supports_deep_thinking': True
     },
     'agentica-org/deepcoder-14b-preview:free': {
         'id': 'agentica-org/deepcoder-14b-preview:free',
-        'display_name': 'MilkyCoder Pro',
+        'display_name': 'CodeCascade Titan',
         'description': 'Specialized for complex programming tasks',
         'supports_deep_thinking': True
     },
-    'deepseek/deepseek-v3-base:free': {
-        'id': 'deepseek/deepseek-v3-base:free',
-        'display_name': 'Milky 3.7 sonnet',
-        'description': 'Optimized for software development',
+    'deepseek/deepseek-r1-0528:free': {
+        'id': 'deepseek/deepseek-r1-0528:free',
+        'display_name': 'SynthMind Zephyr',
+        'description': 'NumAI Best Advanced Model',
         'supports_deep_thinking': True
     },
     'groq/llama3-8b': {
         'id': 'llama3-8b-8192',
-        'display_name': 'Milky 8B',
-        'description': 'Ultra-fast Llama 3 8B model with deep thinking capabilities',
+        'display_name': 'NeuraNova-X',
+        'description': 'Best for Daily Task',
         'provider': 'groq',
         'supports_deep_thinking': True
     },
     'groq/llama3-70b': {
         'id': 'llama3-70b-8192',
-        'display_name': 'Milky Edge',
-        'description': 'Ultra-fast Llama 3 70B model (Groq)',
+        'display_name': 'SimulMind Vortex',
+        'description': 'Best for Daily Task',
         'provider': 'groq',
-        'supports_deep_thinking': True
-    },
-    'together/llama-vision-free': {
-        'id': 'meta-llama/Llama-Vision-Free',
-        'display_name': 'Llama Vision Free',
-        'description': 'Llama-Vision-Free model (Together AI)',
-        'provider': 'together',
         'supports_deep_thinking': True
     },
     'cohere/command-r-plus': {
         'id': 'command-r-plus',
-        'display_name': 'Milky S2',
-        'description': 'Ultra-fast Command-R+ model (Cohere)',
+        'display_name': 'Visionary Omega-9',
+        'description': 'Fast Responses',
         'provider': 'cohere',
         'supports_deep_thinking': True
     },
     'cohere/command-r': {
         'id': 'command-r',
-        'display_name': 'Milky 2o',
-        'description': 'Ultra-fast Command-R model (Cohere)',
+        'display_name': 'CogniSphere Atlas',
+        'description': 'Latest Small context Model',
         'provider': 'cohere',
         'supports_deep_thinking': True
     }

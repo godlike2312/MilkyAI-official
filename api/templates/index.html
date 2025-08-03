@@ -64,8 +64,8 @@
                 <div class="header-content">
                     <a href="">
                         <div class="logo">
-                            <img src="{{ url_for('static', filename='img/model-logos/milky-edge.svg') }}" alt="NumAI Logo"
-                                class="logo-image">
+                            <img src="{{ url_for('static', filename='img/model-logos/milky-edge.svg') }}"
+                                alt="NumAI Logo" class="logo-image">
                         </div>
                     </a>
                     <div class="sidebar-toggle" data-tooltip="Toggle Sidebar">
@@ -197,8 +197,15 @@
                                 </button>
                                 <button id="model-switch-btn" class="action-btn model-switch-btn"
                                     data-tooltip="Switch AI Model">
+
                                     <div id="current-model-icon" class="current-model-icon">
-                                        <!-- The current model icon will be inserted here by JavaScript -->
+                                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                            <!-- Top arrow (clockwise) -->
+                                            <path d="M12 4C14.5 4 16.75 5 18.25 6.75L19.75 5.25V10H15L17 8C15.75 6.5 14 6 12 6C9 6 6.5 8 6.07 11H4.05C4.54 6.97 7.92 4 12 4Z" fill="currentColor"/>
+                                            
+                                            <!-- Bottom arrow (counterclockwise) -->
+                                            <path d="M12 20C9.5 20 7.25 19 5.75 17.25L4.25 18.75V14H9L7 16C8.25 17.5 10 18 12 18C15 18 17.5 16 17.93 13H19.95C19.46 17.03 16.08 20 12 20Z" fill="currentColor"/>
+                                          </svg>
                                     </div>
                                 </button>
                             </div>
@@ -213,118 +220,60 @@
                     </div>
                 </div>
 
-                <!-- Model Switcher Popup -->
+
                 <div id="model-switcher-popup" class="model-switcher-popup" style="display: none;">
-                    <div class="model-switcher-header">
-                        <h3>Choose Model</h3>
-                        <button id="close-model-switcher" class="close-model-switcher">
-                            <i class="fas fa-times"></i>
-                        </button>
-                    </div>
                     <div id="model-options-container" class="model-options-container">
-                        <!-- Ultra Fast Models (Groq and Cohere) -->
                         <div class="model-category">
-                            <h4 class="model-category-title">Ultra Fast models</h4>
                             <div class="model-option" data-model-id="groq/llama3-8b">
-                                <div class="model-option-icon"><!-- Logo will be inserted by JavaScript --></div>
                                 <div class="model-option-info">
-                                    <div class="model-option-name">Milky 8B</div>
-                                    <div class="model-option-description">Ultra-fast Milky 8B model</div>
+                                    <div class="model-option-name">NeuraNova-X</div>
+                                    <div class="model-option-description">Best for Daily Task</div>
                                 </div>
                             </div>
                             <div class="model-option" data-model-id="groq/llama3-70b">
-                                <div class="model-option-icon"><!-- Logo will be inserted by JavaScript --></div>
                                 <div class="model-option-info">
-                                    <div class="model-option-name">Milky 70B</div>
-                                    <div class="model-option-description">Ultra-fast Milky 70B model</div>
+                                    <div class="model-option-name">SimulMind Vortex</div>
+                                    <div class="model-option-description">Best for Daily Task</div>
                                 </div>
                             </div>
                             <div class="model-option" data-model-id="cohere/command-r-plus">
-                                <div class="model-option-icon"><!-- Logo will be inserted by JavaScript --></div>
                                 <div class="model-option-info">
-                                    <div class="model-option-name">Milky S2</div>
-                                    <div class="model-option-description">Ultra-fast Command-R+ model (Cohere)</div>
+                                    <div class="model-option-name">Visionary Omega-9</div>
+                                    <div class="model-option-description">Fast Responses</div>
                                 </div>
                             </div>
                             <div class="model-option" data-model-id="cohere/command-r">
-                                <div class="model-option-icon"><!-- Logo will be inserted by JavaScript --></div>
                                 <div class="model-option-info">
-                                    <div class="model-option-name">Milky 2o</div>
-                                    <div class="model-option-description">Ultra-fast Command-R model (Cohere)</div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- General Models -->
-                        <div class="model-category">
-                            <h4 class="model-category-title">Text Based Models</h4>
-                            <div class="model-option" data-model-id="deepseek/deepseek-chat-v3-0324:free">
-                                <div class="model-option-icon"><!-- Logo will be inserted by JavaScript --></div>
-                                <div class="model-option-info">
-                                    <div class="model-option-name">Milky 3.1</div>
-                                    <div class="model-option-description">Advanced reasoning and coding capabilities
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="model-option" data-model-id="mistralai/mistral-small-3.2-24b-instruct:free">
-                                <div class="model-option-icon"><!-- Logo will be inserted by JavaScript --></div>
-                                <div class="model-option-info">
-                                    <div class="model-option-name">Milky Small</div>
-                                    <div class="model-option-description">Fast and efficient model with strong reasoning
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="model-option" data-model-id="mistralai/devstral-small:free">
-                                <div class="model-option-icon"><!-- Logo will be inserted by JavaScript --></div>
-                                <div class="model-option-info">
-                                    <div class="model-option-name">Milky 3.7</div>
-                                    <div class="model-option-description">Specialized for coding and technical tasks
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="model-option" data-model-id="google/gemma-3n-e4b-it:free">
-                                <div class="model-option-icon"><!-- Logo will be inserted by JavaScript --></div>
-                                <div class="model-option-info">
-                                    <div class="model-option-name">Milky V2</div>
-                                    <div class="model-option-description">Google's efficient model with strong reasoning
-                                    </div>
+                                    <div class="model-option-name">CogniSphere Atlas</div>
+                                    <div class="model-option-description">Latest Small context Model</div>
                                 </div>
                             </div>
                         </div>
 
                         <!-- Coders Models -->
                         <div class="model-category">
-                            <h4 class="model-category-title">Coders</h4>
-                            <div class="model-option" data-model-id="agentica-org/deepcoder-14b-preview:free">
-                                <div class="model-option-icon"><!-- Logo will be inserted by JavaScript --></div>
+                            <h4 class="model-category-title">Reasoning</h4>
+                            <div class="model-option" data-model-id="deepseek/deepseek-r1-0528:free">
                                 <div class="model-option-info">
-                                    <div class="model-option-name">MilkyCoder Pro</div>
+                                    <div class="model-option-name">SynthMind Zephyr</div>
+                                    <div class="model-option-description">NumAI Best Advanced Model</div>
+                                </div>
+                            </div>
+                            <div class="model-option" data-model-id="deepseek/deepseek-chat-v3-0324:free">
+                                <div class="model-option-info">
+                                    <div class="model-option-name">QuantumText Maestro</div>
+                                    <div class="model-option-description">Advanced reasoning and coding capabilities
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="model-option" data-model-id="agentica-org/deepcoder-14b-preview:free">
+                                <div class="model-option-info">
+                                    <div class="model-option-name">CodeCascade Titan</div>
                                     <div class="model-option-description">Specialized for complex programming tasks
                                     </div>
                                 </div>
                             </div>
-                            <div class="model-option" data-model-id="deepseek/deepseek-v3-base:free">
-                                <div class="model-option-icon"><!-- Logo will be inserted by JavaScript --></div>
-                                <div class="model-option-info">
-                                    <div class="model-option-name">Milky 3.7 sonnet</div>
-                                    <div class="model-option-description">Optimized for software development</div>
-                                </div>
-                            </div>
-                            <div class="model-option" data-model-id="deepseek/deepseek-chat-v3-0324:free">
-                                <div class="model-option-icon"><!-- Logo will be inserted by JavaScript --></div>
-                                <div class="model-option-info">
-                                    <div class="model-option-name">Sonnet Seek</div>
-                                    <div class="model-option-description">Balanced coding and conversation abilities
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="model-option" data-model-id="mistralai/mistral-7b-instruct:free">
-                                <div class="model-option-icon"><!-- Logo will be inserted by JavaScript --></div>
-                                <div class="model-option-info">
-                                    <div class="model-option-name">Milky Fast</div>
-                                    <div class="model-option-description">Fast and efficient code generation</div>
-                                </div>
-                            </div>
+
                         </div>
                     </div>
                 </div>
