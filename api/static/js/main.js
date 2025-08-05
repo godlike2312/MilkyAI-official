@@ -45,15 +45,12 @@ let currentModelInfo = null;
 // Load deep thinking mode from localStorage on page load
 document.addEventListener('DOMContentLoaded', () => {
     // Test localStorage functionality
-    console.log('Testing localStorage functionality...');
+
     const testKey = 'test-deepthink';
     localStorage.setItem(testKey, 'test-value');
     const testValue = localStorage.getItem(testKey);
-    console.log('localStorage test:', testKey, '=', testValue);
     localStorage.removeItem(testKey);
     
-    console.log('localStorage available:', typeof localStorage !== 'undefined');
-    console.log('localStorage quota exceeded:', false); // We'll check this later if needed
     const savedDeepThinkingMode = localStorage.getItem('deepThinkingMode');
     if (savedDeepThinkingMode === 'true') {
         deepThinkingMode = true;
@@ -78,7 +75,6 @@ document.addEventListener('DOMContentLoaded', () => {
         // Remove oldest entries (keep only last 100)
         const keysToRemove = sortedKeys.slice(0, sortedKeys.length - 100);
         keysToRemove.forEach(key => localStorage.removeItem(key));
-        console.log(`Cleaned up ${keysToRemove.length} old deepthink localStorage entries`);
     }
     
     // Update thinking toggle button after models are loaded
@@ -106,14 +102,12 @@ function addKeyboardShortcuts() {
         // Ctrl+I: Create new chat
         if (e.ctrlKey && e.key === 'i') {
             e.preventDefault();
-            console.log('Keyboard shortcut: Ctrl+I - Creating new chat');
             createNewChatSession();
         }
         
         // Ctrl+O: Toggle deep thinking mode
         if (e.ctrlKey && e.key === 'o') {
             e.preventDefault();
-            console.log('Keyboard shortcut: Ctrl+O - Toggling deep thinking mode');
             toggleDeepThinkingMode();
         }
     });
@@ -138,8 +132,6 @@ function toggleDeepThinkingMode() {
         thinkingToggleBtn.classList.remove('active');
         thinkingToggleBtn.setAttribute('data-tooltip', 'Deep Thinking: OFF (Ctrl+O)');
     }
-    
-    console.log('Deep thinking mode:', deepThinkingMode ? 'ON' : 'OFF');
 }
 
 // Offline indicator element
@@ -186,7 +178,6 @@ async function verifyTokenOnce() {
             });
             
             if (response.ok) {
-                console.log('Token verified and cached on server');
                 // Show success message briefly before removing overlay
                 const message = overlay.querySelector('.loading-message');
                 message.textContent = 'Verification successful!';
@@ -234,7 +225,6 @@ function checkOnlineStatus() {
         
         // If we're back online and have a currentChatId, try to reload the chat
         if (currentChatId && currentUser) {
-            console.log('Back online, attempting to reload chat:', currentChatId);
             loadChat(currentChatId);
         }
     } else {
@@ -384,21 +374,18 @@ async function fetchAvailableModels() {
         const preferredModel = localStorage.getItem('preferred_model');
         if (preferredModel && availableModels[preferredModel]) {
             currentModel = preferredModel;
-            console.log('Using preferred model from localStorage:', currentModel);
         } else {
             currentModel = data.default_model;
-            console.log('Using default model:', currentModel);
         }
         
         // Debug: Check if the model exists in the available models
         if (availableModels[currentModel]) {
-            console.log('Model found in available models:', availableModels[currentModel]);
         } else {
             console.warn('Current model not found in available models:', currentModel);
             // Try to find a matching model by ID
             for (const [key, model] of Object.entries(availableModels)) {
                 if (model.id === currentModel) {
-                    console.log('Found matching model by ID:', key);
+
                     currentModel = key;
                     break;
                 }
@@ -409,7 +396,6 @@ async function fetchAvailableModels() {
         if (availableModels[currentModel]) {
             currentModelInfo = availableModels[currentModel];
             updateModelIndicator(availableModels[currentModel].display_name);
-            console.log('Current model info updated:', currentModelInfo);
         } else {
             console.error('Cannot update model indicator: model not found', currentModel);
         }
@@ -535,9 +521,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const modelSwitcherPopup = document.getElementById('model-switcher-popup');
     const closeModelSwitcherBtn = document.getElementById('close-model-switcher');
     
-    // Debug log to check if elements exist
-    console.log('Model Switch Button:', modelSwitchBtn);
-    console.log('Model Switcher Popup:', modelSwitcherPopup);
     
     if (modelSwitchBtn && modelSwitcherPopup) {
         // Remove any existing event listeners
@@ -549,14 +532,12 @@ document.addEventListener('DOMContentLoaded', () => {
         // Add new event listener
         freshModelSwitchBtn.addEventListener('click', (event) => {
             event.stopPropagation(); // Prevent event from bubbling up
-            console.log('Model switch button clicked');
             
             // Toggle the display of the popup with animation
             if (modelSwitcherPopup.style.display === 'block') {
                 // Hide with animation
                 modelSwitcherPopup.style.opacity = '0';
                 modelSwitcherPopup.style.transform = 'translateX(-50%) translateY(10px)';
-                console.log('Hiding model switcher popup');
                 
                 // After animation completes, hide the element
                 setTimeout(() => {
@@ -567,7 +548,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 modelSwitcherPopup.style.opacity = '0';
                 modelSwitcherPopup.style.transform = 'translateX(-50%) translateY(10px)';
                 modelSwitcherPopup.style.display = 'block';
-                console.log('Showing model switcher popup');
+
                 
                 // Force a reflow to ensure the popup is displayed
                 void modelSwitcherPopup.offsetWidth;
@@ -591,7 +572,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // Add new event listener
         freshCloseBtn.addEventListener('click', (event) => {
             event.stopPropagation(); // Prevent event from bubbling up
-            console.log('Close model switcher button clicked');
+
             
             // Hide with animation
             modelSwitcherPopup.style.opacity = '0';
@@ -611,8 +592,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const currentModelSwitchBtn = document.getElementById('model-switch-btn');
             // Check if the click is outside the popup and not on the model switch button
             if (!modelSwitcherPopup.contains(event.target) && event.target !== currentModelSwitchBtn) {
-                console.log('Clicked outside, closing popup');
-                
+      
                 // Hide with animation
                 modelSwitcherPopup.style.opacity = '0';
                 modelSwitcherPopup.style.transform = 'translateX(-50%) translateY(10px)';
@@ -650,7 +630,6 @@ const modelIdToNameMap = {
 };
 
 // Debug: Log all model options and their data-model-id attributes
-console.log('Available model options:');
 modelOptions.forEach(option => {
     console.log(`Model: ${option.querySelector('.model-option-name').textContent}, ID: ${option.getAttribute('data-model-id')}`);
 });
@@ -703,9 +682,7 @@ modelOptions.forEach(option => {
             // Update current model
             currentModel = modelId;
             currentModelInfo = availableModels[modelId];
-            console.log('Model selected:', modelId);
-            console.log('Model info:', currentModelInfo);
-            
+
             // Update selected state in UI
             modelOptions.forEach(opt => {
                 opt.classList.remove('selected');
@@ -715,8 +692,7 @@ modelOptions.forEach(option => {
             
             // Get model name from the option
             const modelName = option.querySelector('.model-option-name').textContent;
-            console.log('Selected model name:', modelName);
-            
+
             // Update model indicator
             updateModelIndicator(modelName);
             
@@ -734,8 +710,7 @@ modelOptions.forEach(option => {
             
             // Save preference to localStorage
             localStorage.setItem('preferred_model', modelId);
-            console.log('Saved model preference to localStorage:', modelId);
-            
+
             // Show feedback to user
             if (typeof showToast === 'function') {
                 showToast(`Model switched to ${modelName}`);
@@ -823,7 +798,6 @@ function addMessage(content, type, isOfflineMessage = false, modelId = null) {
     if (type === 'assistant') {
         // Ensure we're storing the raw content before any processing
         messageDiv.setAttribute('data-original-content', content);
-        console.log('Storing original content for assistant message:', content.substring(0, 50) + '...');
     }
     
     // Create a message content container for all message types
@@ -867,8 +841,6 @@ function addMessage(content, type, isOfflineMessage = false, modelId = null) {
         // Check if this is a deep thinking response FIRST, before any other parsing
         if (content.includes('DEEP THINKING BREAKDOWN') || content.includes('THOUGHT PROCESS') || 
             content.includes('FINAL ANSWER') || content.includes('🤔') || content.includes('💡')) {
-            console.log('Detected deep thinking content in existing message, applying deepthink styling');
-            console.log('Content preview:', content.substring(0, 200));
             styleDeepThinkingResponse(messageContent);
         } else if (shouldTreatAsCode(content) && !content.includes('```')) {
             // Wrap HTML content in code blocks to prevent execution
@@ -989,9 +961,8 @@ function addMessage(content, type, isOfflineMessage = false, modelId = null) {
                 // Default to Ava
                 savedVoice = 'en-US-AvaNeural';
                 localStorage.setItem('selectedVoice', savedVoice);
-                console.log('[DEBUG] Read Aloud: No voice selected or Sara requested, using default voice: en-US-AvaNeural');
             } else {
-                console.log(`[DEBUG] Read Aloud: Voice selected from settings: ${savedVoice}`);
+                console.log(`${savedVoice}`);
             }
             
             // Show loading indicator
@@ -999,7 +970,7 @@ function addMessage(content, type, isOfflineMessage = false, modelId = null) {
             speakBtn.classList.add('active');
 
             try {
-                console.log(`[DEBUG] Read Aloud: Requesting TTS with voice: ${savedVoice}`);
+                console.log(`${savedVoice}`);
                 
                 // Call the Edge TTS API
                 const response = await fetch('/api/edge-tts', {
@@ -1018,17 +989,14 @@ function addMessage(content, type, isOfflineMessage = false, modelId = null) {
                     throw new Error(data.error);
                 }
                 
-                // Always log the voice being used for debugging
-                console.log(`[DEBUG] Read Aloud: Using voice: ${data.voice_used || savedVoice}`);
+
                 
                 // Log additional details about the voice selection process
                 if (data.requested_voice) {
-                    console.log(`[DEBUG] Read Aloud: Requested voice: ${data.requested_voice}, Server selected: ${data.voice_used}`);
+                    console.log(`${data.requested_voice} - ${data.voice_used}`);
                 }
                 
-                // Always show which voice is being used
-                console.log(`[DEBUG] Read Aloud: Voice selection: ${savedVoice} → ${data.voice_used || savedVoice}`);
-                    
+
                 // Extract the voice name for display
                 let voiceName = "Unknown";
                 const voiceToDisplay = data.voice_used || savedVoice;
@@ -1049,7 +1017,7 @@ function addMessage(content, type, isOfflineMessage = false, modelId = null) {
                 
                 // If there was a voice substitution, indicate it
                 if (data.voice_used && data.voice_used !== savedVoice) {
-                    console.log(`[DEBUG] Read Aloud: Voice substitution: ${savedVoice} → ${data.voice_used}`);
+                    
                     notification.textContent = `Voice substituted: ${voiceName}`;
                     notification.style.backgroundColor = 'rgba(255,193,7,0.9)';
                 } else {
@@ -1097,7 +1065,7 @@ function addMessage(content, type, isOfflineMessage = false, modelId = null) {
                 
                 // Handle audio completion
                 audio.onended = () => {
-                    console.log(`[DEBUG] Read Aloud: Audio playback completed (Voice used: ${data.voice_used || savedVoice})`);
+                  
                     speakBtn.classList.remove('active');
                     URL.revokeObjectURL(audioUrl);
                     window.readAloudAudio = null;
@@ -1288,17 +1256,13 @@ function decodeHtmlEntities(text) {
 
 // Function to parse and format code blocks
 function parseCodeBlocks(content) {
-    console.log('parseCodeBlocks called with content preview:', content.substring(0, 200));
-    console.log('Content contains code blocks:', content.includes('```'));
-    
+
     let parts = content.split('```');
-    console.log('Split into', parts.length, 'parts');
-    
+
     let result = '';
     for (let i = 0; i < parts.length; i++) {
         if (i % 2 === 0) {
             let textContent = parts[i];
-            console.log('Processing text part', i, 'with preview:', textContent.substring(0, 100));
             // Numbered lists
             textContent = textContent.replace(/^(\d+)\.\s+(.+)$/gm, '<div class="list-item"><span class="list-number">$1.</span><span class="list-content">$2</span></div>');
             // Bullet lists
@@ -1352,9 +1316,7 @@ function parseCodeBlocks(content) {
         } else {
             let codeContent = parts[i];
             let language = '';
-            
-            console.log('Processing code part', i, 'with preview:', codeContent.substring(0, 100));
-            
+  
             // Check if the first line contains a language identifier (no spaces, just alphanumeric)
             const firstLineBreak = codeContent.indexOf('\n');
             if (firstLineBreak > 0) {
@@ -1363,31 +1325,27 @@ function parseCodeBlocks(content) {
                 if (firstLine && !firstLine.includes(' ') && /^[a-zA-Z0-9+#]+$/.test(firstLine)) {
                     language = firstLine;
                     codeContent = codeContent.substring(firstLineBreak + 1);
-                    console.log('Extracted language from first line:', language);
                 } else {
-                    console.log('First line does not look like a language identifier:', firstLine);
+                    console.log(firstLine);
                 }
             } else {
-                console.log('No line break found, using full content as code');
+                console.log('uhh');
             }
-            
-            console.log('Processing code block with language:', language);
-            console.log('Code content preview:', codeContent.substring(0, 100));
-            
+
             result += '<div class="code-block">';
             result += '<div class="code-header">';
             if (language) {
                 // Clean up language name for display
                 const displayLanguage = language.toLowerCase().replace(/[^a-zA-Z0-9]/g, '');
                 result += '<div class="code-language">' + displayLanguage + '</div>';
-                console.log('Added language header:', displayLanguage);
+
             } else {
-                console.log('No language detected for code block');
+
                 // Try to detect language from content
                 const detectedLanguage = detectLanguageFromContent(codeContent);
                 if (detectedLanguage) {
                     result += '<div class="code-language">' + detectedLanguage + '</div>';
-                    console.log('Detected language from content:', detectedLanguage);
+  
                 } else {
                     result += '<div class="code-language">Example</div>';
                 }
@@ -1543,7 +1501,6 @@ async function sendMessage(message) {
         let thinkingStartTime = null;
         if (deepThinkingMode) {
             thinkingStartTime = Date.now();
-            console.log('Deep thinking mode enabled, starting timing');
         }
 
         let headers = { 'Content-Type': 'application/json' };
@@ -1568,7 +1525,6 @@ async function sendMessage(message) {
                 const title = words.slice(0, 5).join(' ') + (words.length > 5 ? '...' : '');
                 // Replace large content with title
                 processedMsg.content = `${title}`;
-                console.log(`Truncated large message content (${msg.content.length} chars) to title`);
                 return processedMsg;
             }
             return msg;
@@ -1606,7 +1562,6 @@ async function sendMessage(message) {
             
             if (deepThinkingMode && thinkingStartTime) {
                 thinkingDuration = Math.round((thinkingEndTime - thinkingStartTime) / 1000);
-                console.log(`Thinking duration: ${thinkingDuration} seconds`);
             }
             
             // Create assistant message UI element
@@ -1622,7 +1577,6 @@ async function sendMessage(message) {
             chatMessages.scrollTop = chatMessages.scrollHeight;
             
             // Show typing indicator immediately when AI starts responding
-            console.log('About to show typing indicator for message div:', messageDiv);
             showTypingIndicator(messageDiv);
             
             // Add a small delay before processing content to show typing indicator
@@ -1632,8 +1586,7 @@ async function sendMessage(message) {
 
             // Check if deep thinking mode is enabled and create container structure
             if (deepThinkingMode) {
-                console.log('Deep thinking mode enabled, creating deepthink container structure');
-                
+
                 // Create the deepthink container structure
                 const deepthinkContainer = document.createElement('div');
                 deepthinkContainer.className = 'deepthink-container';
@@ -1698,19 +1651,18 @@ async function sendMessage(message) {
                 deepthinkContainer.appendChild(deepthinkHeaderContainer);
                 deepthinkContainer.appendChild(deepthinkContent);
                 
-                // Restore saved state from localStorage
-                console.log('sendMessage: Container ID:', containerId);
+
                 const key = containerId;
                 const savedState = localStorage.getItem(key);
-                console.log('sendMessage: Saved state from localStorage:', key, '=', savedState);
+               
                 if (savedState === 'collapsed') {
                     deepthinkContainer.classList.add('collapsed');
-                    console.log('sendMessage: Applied collapsed state to container');
+
                 } else if (savedState === null) {
-                    console.log('sendMessage: No saved state found, defaulting to expanded');
+
                     deepthinkContainer.classList.remove('collapsed');
                 } else {
-                    console.log('sendMessage: Saved state is expanded, keeping open');
+                    console.log('SendMessage');
                 }
                 
                 // Add the deepthink container to the message
@@ -1758,7 +1710,6 @@ async function sendMessage(message) {
             try {
                 // Check if deep thinking mode is enabled and process content accordingly
                 if (deepThinkingMode && messageDiv.isDeepThinking) {
-                    console.log('Processing content in deep thinking mode');
                     
                     // Use the pre-calculated thinking duration
                     if (thinkingDuration > 0) {
@@ -1809,9 +1760,6 @@ async function sendMessage(message) {
                                 finalAnswer = finalAnswer.replace('FINAL ANSWER', '').trim();
                             }
                             
-                            console.log('Found pattern:', pattern.split);
-                            console.log('Thought process length:', thoughtProcess.length);
-                            console.log('Final answer length:', finalAnswer.length);
                             foundPattern = true;
                             break;
                         }
@@ -1819,17 +1767,9 @@ async function sendMessage(message) {
                     
                     // If we found both sections and they have content
                     if (foundPattern && thoughtProcess && finalAnswer) {
-                        console.log('Successfully parsed deep thinking response');
-                        console.log('Thought process contains code blocks:', thoughtProcess.includes('```'));
-                        console.log('Final answer contains code blocks:', finalAnswer.includes('```'));
-                        console.log('Thought process preview:', thoughtProcess.substring(0, 200));
-                        console.log('Final answer preview:', finalAnswer.substring(0, 200));
-                        
                         // Parse the content properly for display
                         const renderEmojiMarkdown = (text) => {
-                            console.log('Rendering markdown for text:', text.substring(0, 100));
                             if (text.includes('```')) {
-                                console.log('Text contains code blocks, using parseCodeBlocks');
                                 return parseCodeBlocks(text);
                             }
                             
@@ -1848,26 +1788,22 @@ async function sendMessage(message) {
                             return marked.parse(text, { renderer });
                         };
                         
-                        // Use the existing deepthink containers instead of replacing the entire content
-                        console.log('Using existing deepthink containers for streaming');
-                        
+
                         // Stream content into the existing containers
                         await animateTyping(messageDiv.deepthinkContent, thoughtProcess, renderEmojiMarkdown);
                         await animateTyping(messageDiv.finalAnswerContainer, finalAnswer, renderEmojiMarkdown);
                         
-                        // Verify the content was replaced
-                        console.log('After replacement, messageContent.innerHTML length:', messageContent.innerHTML.length);
-                        
+  
                         // Initially collapse the thought process
                         const deepthinkContainer = messageContent.querySelector('.deepthink-container');
                         if (deepthinkContainer) {
-                            console.log('Found deepthink container after replacement');
+                         
                             // deepthinkContainer.classList.add('collapsed'); // Now open by default
                         } else {
-                            console.log('No deepthink container found after replacement');
+                            console.log('=+=+=');
                         }
                     } else {
-                        console.log('Failed to parse deep thinking response, using fallback approach');
+                        console.log('Failed =+=+=+');
                         
                         // Fallback: Check if content contains deep thinking indicators
                         const hasDeepThinkingIndicators = content.includes('DEEP THINKING') || 
@@ -1900,17 +1836,17 @@ async function sendMessage(message) {
                             }
                             
                             if (thoughtProcessFallback && finalAnswerFallback) {
-                                console.log('Using fallback parsing for deep thinking content');
+                                
                                 await animateTyping(messageDiv.deepthinkContent, thoughtProcessFallback, renderEmojiMarkdown);
                                 await animateTyping(messageDiv.finalAnswerContainer, finalAnswerFallback, renderEmojiMarkdown);
                             } else {
                                 // Last resort: put everything in final answer
-                                console.log('Using last resort: putting all content in final answer');
+                               
                                 await animateTyping(messageDiv.finalAnswerContainer, content, renderEmojiMarkdown);
                             }
                         } else {
                             // No deep thinking indicators, treat as regular content
-                            console.log('No deep thinking indicators found, treating as regular content');
+                           
                             await animateTyping(messageDiv.finalAnswerContainer, content, renderEmojiMarkdown);
                         }
                         
@@ -1921,8 +1857,7 @@ async function sendMessage(message) {
                         }
                     }
                 } else {
-                    // Regular content processing (non-deep thinking mode)
-                    console.log('Processing content in regular mode');
+
                     
                     // Check if content should be treated as code (contains HTML patterns)
                     let processedContent = content;
@@ -1942,18 +1877,18 @@ async function sendMessage(message) {
                     // Store the original content as a data attribute on the message div
                     if (messageDiv && !messageDiv.hasAttribute('data-original-content')) {
                         messageDiv.setAttribute('data-original-content', content);
-                        console.log('Setting original content in regular mode');
+
                     }
                 }
             } catch (err) {
-                console.log('Typing animation cancelled');
+
                 messageContent.innerHTML = renderEmojiMarkdown(completeContent);
                 
                 // Store the original content as a data attribute on the message div
                 const messageDiv = messageContent.closest('.message');
                 if (messageDiv && !messageDiv.hasAttribute('data-original-content')) {
                     messageDiv.setAttribute('data-original-content', completeContent);
-                    console.log('Setting original content in renderEmojiMarkdown catch block');
+  
                 }
                 
                 chatMessages.scrollTop = chatMessages.scrollHeight;
@@ -1985,7 +1920,7 @@ async function sendMessage(message) {
             // Auto-speak functionality if enabled in settings
             const autoSpeakEnabled = localStorage.getItem('autoSpeakEnabled') === 'true';
             if (autoSpeakEnabled) {
-                console.log('[DEBUG] Auto-speak enabled, preparing to read response');
+             
                 // We'll trigger this after the message is fully rendered
                 setTimeout(() => {
                     // Get the message content element
@@ -2118,15 +2053,14 @@ async function sendMessage(message) {
 
                 // Always process text to skip code blocks and emojis for better readability
                 let textToSpeak = processTextForSpeech(messageContent);
-                console.log('[DEBUG] Read Aloud: Skipping code blocks and emojis');
                 
                 // Check if text is too long and needs summarization
                 const wordCount = textToSpeak.split(/\s+/).length;
                 let isSummarized = false;
                 if (wordCount > 50) {
-                    console.log(`[DEBUG] Read Aloud: Text is ${wordCount} words, generating summary`);
+                   
                     textToSpeak = summarizeTextForSpeech(textToSpeak);
-                    console.log(`[DEBUG] Read Aloud: Generated summary with ${textToSpeak.split(/\s+/).length} words`);
+                 
                     isSummarized = true;
                 }
                 
@@ -2142,9 +2076,9 @@ async function sendMessage(message) {
                     // Default to Ava
                     savedVoice = 'en-US-AvaNeural';
                     localStorage.setItem('selectedVoice', savedVoice);
-                    console.log('[DEBUG] Read Aloud: No voice selected or Sara requested, using default voice: en-US-AvaNeural');
+                    
                 } else {
-                    console.log(`[DEBUG] Read Aloud: Voice selected from settings: ${savedVoice}`);
+                    console.log(`${savedVoice}`);
                 }
                 
                 // Show loading indicator
@@ -2152,8 +2086,7 @@ async function sendMessage(message) {
                 speakBtn.classList.add('active');
 
                 try {
-                    console.log(`[DEBUG] Read Aloud: Requesting TTS with voice: ${savedVoice}`);
-                    
+
                     // Call the Edge TTS API
                     const response = await fetch('/api/edge-tts', {
                         method: 'POST',
@@ -2172,8 +2105,7 @@ async function sendMessage(message) {
                     }
                     
                     // Always log the voice being used for debugging
-                    console.log(`[DEBUG] Read Aloud: Using voice: ${data.voice_used || savedVoice}`);
-                    
+
                     // Log additional details about the voice selection process
                     if (data.requested_voice) {
                         console.log(`[DEBUG] Read Aloud: Requested voice: ${data.requested_voice}, Server selected: ${data.voice_used}`);
@@ -2493,7 +2425,7 @@ function loadUserProfilePicture(user) {
         
         // Handle image load errors
         userAvatar.onerror = () => {
-            console.log('Failed to load profile picture, showing fallback');
+        
             userAvatar.style.display = 'none';
             userAvatarFallback.style.display = 'flex';
         };
@@ -2503,8 +2435,7 @@ function loadUserProfilePicture(user) {
             console.log('Profile picture loaded successfully');
         };
     } else {
-        // Show fallback icon
-        console.log('No profile picture available, showing fallback');
+
         userAvatar.style.display = 'none';
         userAvatarFallback.style.display = 'flex';
     }
@@ -2512,11 +2443,11 @@ function loadUserProfilePicture(user) {
 
 // Initialize chat functionality
 async function initializeChats() {
-    console.log('Initializing chats...');
+
     // Check if user is logged in
     firebase.auth().onAuthStateChanged(async (user) => {
         if (user) {
-            console.log('User authenticated:', user.email);
+
             currentUser = user;
             
             // Load user profile picture
@@ -2524,7 +2455,7 @@ async function initializeChats() {
             
             // Clean up any existing listener before setting up a new one
             if (window.chatUnsubscribe) {
-                console.log('Cleaning up existing chat listener');
+             
                 window.chatUnsubscribe();
             }
             
@@ -2537,18 +2468,18 @@ async function initializeChats() {
                 const urlChatId = urlParams.get('chat');
                 
                 if (urlChatId) {
-                    console.log('Found chat ID in URL:', urlChatId);
+                 
                     
                     try {
                         // Verify this chat exists and belongs to the current user
                         const chatDoc = await firebase.firestore().collection('chats').doc(urlChatId).get();
                         
                         if (chatDoc.exists && chatDoc.data().userId === user.uid) {
-                            console.log('Loading chat from URL');
+                            
                             loadChat(urlChatId);
                             return;
                         } else {
-                            console.log('Chat from URL not found or does not belong to current user');
+                            console.log('Chat not Found');
                         }
                     } catch (error) {
                         console.error('Error verifying chat from URL:', error);
@@ -2559,18 +2490,18 @@ async function initializeChats() {
                 const savedChatId = localStorage.getItem('currentChatId');
                 
                 if (savedChatId) {
-                    console.log('Found saved chat ID in localStorage:', savedChatId);
+            
                     
                     try {
                         // Verify this chat exists and belongs to the current user
                         const chatDoc = await firebase.firestore().collection('chats').doc(savedChatId).get();
                         
                         if (chatDoc.exists && chatDoc.data().userId === user.uid) {
-                            console.log('Loading saved chat');
+                        
                             loadChat(savedChatId);
                             return;
                         } else {
-                            console.log('Saved chat not found or does not belong to current user');
+                           
                             // Clear invalid saved chat ID
                             localStorage.removeItem('currentChatId');
                         }
@@ -2579,7 +2510,7 @@ async function initializeChats() {
                         
                         // If we're offline, we might not be able to verify the chat
                         // Try to load it anyway, the setupChatListener will handle validation when online
-                        console.log('Attempting to load saved chat without verification (possibly offline)');
+                        
                         loadChat(savedChatId);
                         return;
                     }
@@ -2596,7 +2527,7 @@ async function initializeChats() {
                         .get();
                         
                     if (chatsSnapshot.empty) {
-                        console.log('No chats found, creating new chat session');
+
                         await createNewChatSession();
                     }
                     // We don't need to load the most recent chat here anymore
@@ -2610,7 +2541,7 @@ async function initializeChats() {
                         if (savedHistory) {
                             const parsedHistory = JSON.parse(savedHistory);
                             if (Array.isArray(parsedHistory) && parsedHistory.length > 0) {
-                                console.log('Loading chat history from localStorage due to offline state');
+                               
                                 chatHistory = parsedHistory;
                                 
                                 // Clear and rebuild sidebar
@@ -2626,7 +2557,7 @@ async function initializeChats() {
                         }
                         
                         // If we couldn't load from localStorage either, create a new chat
-                        console.log('No saved chats found, creating new chat session');
+                    
                         await createNewChatSession();
                     } catch (e) {
                         console.error('Error loading from localStorage, creating new chat:', e);
@@ -2644,7 +2575,7 @@ async function initializeChats() {
                 }
             }
         } else {
-            console.log('User not authenticated');
+
             // Clear any existing chat data when not authenticated
             currentChatId = null;
             chatHistory = [];
@@ -2655,8 +2586,7 @@ async function initializeChats() {
 
 // Set up real-time listener for user's chats
 function setupChatListener(userId) {
-    console.log('Setting up real-time chat listener for user:', userId);
-    
+
     // Clear existing chats from sidebar
     clearChatSidebar();
     
@@ -2670,7 +2600,7 @@ function setupChatListener(userId) {
         .onSnapshot({
             // Listen for document changes
             next: (snapshot) => {
-                console.log('Chat collection updated, document count:', snapshot.docs.length);
+               
                 
                 // Handle added or modified chats
                 snapshot.docChanges().forEach(change => {
@@ -2680,7 +2610,7 @@ function setupChatListener(userId) {
                     };
                     
                     if (change.type === 'added') {
-                        console.log('New chat added:', chatData.id, chatData.title);
+                       
                         // Add to local chat history array if not already present
                         if (!chatHistory.some(chat => chat.id === chatData.id)) {
                             chatHistory.unshift(chatData);
@@ -2689,7 +2619,7 @@ function setupChatListener(userId) {
                     }
                     
                     if (change.type === 'modified') {
-                        console.log('Chat modified:', chatData.id, chatData.title);
+  
                         // Update in local chat history
                         const index = chatHistory.findIndex(chat => chat.id === chatData.id);
                         if (index !== -1) {
@@ -2704,7 +2634,7 @@ function setupChatListener(userId) {
                     }
                     
                     if (change.type === 'removed') {
-                        console.log('Chat removed:', chatData.id);
+                       
                         // Remove from local chat history
                         chatHistory = chatHistory.filter(chat => chat.id !== chatData.id);
                         
@@ -2732,22 +2662,20 @@ function setupChatListener(userId) {
                 // But only if we're not in the middle of creating a new chat
                 // AND only if this is the initial load (not a subsequent update)
                 if (chatHistory.length > 0 && !currentChatId && !window.isCreatingNewChat && !window.chatListenerInitialized) {
-                    console.log('Loading first chat from history (initial load)');
-                    console.log('isCreatingNewChat flag:', window.isCreatingNewChat);
-                    console.log('currentChatId:', currentChatId);
+
                     loadChat(chatHistory[0].id);
                 }
                 
                 // Mark that the listener has been initialized
                 if (!window.chatListenerInitialized) {
                     window.chatListenerInitialized = true;
-                    console.log('Chat listener initialized');
+ 
                 }
                 
                 // Save chat history to localStorage for backup persistence
                 try {
                     localStorage.setItem('chatHistory', JSON.stringify(chatHistory));
-                    console.log('Chat history saved to localStorage, count:', chatHistory.length);
+                   
                 } catch (e) {
                     console.warn('Failed to save chat history to localStorage:', e);
                 }
@@ -2761,7 +2689,7 @@ function setupChatListener(userId) {
                     if (savedHistory) {
                         const parsedHistory = JSON.parse(savedHistory);
                         if (Array.isArray(parsedHistory) && parsedHistory.length > 0) {
-                            console.log('Loading chat history from localStorage, count:', parsedHistory.length);
+                        
                             chatHistory = parsedHistory;
                             
                             // Clear and rebuild sidebar
@@ -2787,7 +2715,6 @@ function setupChatListener(userId) {
 
 // Clear chat sidebar
 function clearChatSidebar() {
-    console.log('Clearing chat history container');
     // Clear the chat history container except for the template
     const template = document.getElementById('chat-item-template');
     if (!template) {
@@ -2815,7 +2742,7 @@ function addChatToSidebar(chat) {
     // Check if chat already exists in sidebar
     const existingChatItem = document.querySelector(`.chat-item[data-id="${chat.id}"]`);
     if (existingChatItem) {
-        console.log('Chat already exists in sidebar, updating instead');
+     
         updateChatInSidebar(chat);
         return;
     }
@@ -2926,9 +2853,9 @@ function removeChatFromSidebar(chatId) {
 
 // Create a new chat session
 async function createNewChatSession() {
-    console.log('Creating new chat session...');
+
     if (!currentUser) {
-        console.log('Cannot create chat: No user logged in');
+
         return;
     }
     
@@ -2938,12 +2865,12 @@ async function createNewChatSession() {
     window.chatListenerInitialized = false;
     
     try {
-        console.log('Creating new chat for user:', currentUser.uid);
+
         // Create a new chat in Firebase
         const chatId = await createNewChat(currentUser.uid);
         
         if (chatId) {
-            console.log('New chat created with ID:', chatId);
+        
             
             // Clear any existing messages first
             while (chatMessages.children.length > 0) {
@@ -2953,29 +2880,20 @@ async function createNewChatSession() {
             // Set up the new chat state FIRST
             currentChatId = chatId;
             localStorage.setItem('currentChatId', chatId);
-            console.log('Set currentChatId to:', chatId);
-            console.log('Previous currentChatId was:', localStorage.getItem('currentChatId'));
-            
+
             // Update URL with the new chat ID
             const newUrl = `${window.location.origin}${window.location.pathname}?chat=${chatId}`;
             window.history.pushState({ chatId: chatId }, '', newUrl);
-            console.log('Updated URL to:', newUrl);
-            console.log('Current URL is now:', window.location.href);
-            
-            // Clear current messages
-            console.log('Clearing chat messages...');
+  
+
             while (chatMessages.children.length > 0) {
                 chatMessages.removeChild(chatMessages.lastChild);
             }
-            console.log('Chat messages cleared, count:', chatMessages.children.length);
-            
+ 
             // Add welcome message to the new chat
-            console.log('Adding welcome message...');
+         
             addMessage("Hello! I'm NumAI. How can I help you today?", 'system');
-            
-            // Reset chat history for the new chat
-            console.log('Resetting chat history array...');
-            console.log('Previous chatHistory length:', chatHistory.length);
+
             chatHistory = [
                 { 
                     role: 'system', 
@@ -3007,37 +2925,30 @@ Follow these strict behavioral and formatting rules:
    - For repetitive or unclear follow-ups, gently guide the user to rephrase: "I'm here to help! Could you rephrase or provide more details to ensure I address your question accurately?"`
 }
             ];
-            console.log('New chatHistory length:', chatHistory.length);
-            console.log('New chatHistory:', chatHistory);
-            
-            console.log('New chat set up and ready:', chatId);
-            
+  
+   
             // Clear the flag after a short delay to allow the listener to process
             setTimeout(() => {
                 window.isCreatingNewChat = false;
-                console.log('Cleared isCreatingNewChat flag');
+
             }, 1000);
             
             // Small delay to ensure sidebar is updated
             setTimeout(() => {
-                console.log('Updating sidebar highlighting for chat:', chatId);
-                // Update active state in sidebar again to ensure it's highlighted
+ // Update active state in sidebar again to ensure it's highlighted
                 const chatItems = document.querySelectorAll('.chat-item');
-                console.log('Found chat items:', chatItems.length);
-                
+
                 chatItems.forEach(item => {
                     const itemId = item.getAttribute('data-id');
-                    console.log('Checking chat item:', itemId, 'against:', chatId);
+                 
                     if (itemId === chatId) {
                         item.classList.add('active');
                         item.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-                        console.log('Activated chat item:', itemId);
+                       
                     } else {
                         item.classList.remove('active');
                     }
                 });
-                
-                console.log('New chat should now be active:', chatId);
             }, 500);
             
             // Focus on the input field for immediate typing
@@ -3048,11 +2959,8 @@ Follow these strict behavioral and formatting rules:
             
             // Show a toast notification
             showToast('New chat created!', 2000);
-            
-            // Test: Try to load the new chat to verify it works
-            console.log('Testing: Attempting to load the newly created chat...');
+
             setTimeout(() => {
-                console.log('Testing: Loading chat', chatId);
                 loadChat(chatId);
             }, 2000);
             
@@ -3070,23 +2978,19 @@ Follow these strict behavioral and formatting rules:
 // Load a specific chat
 async function loadChat(chatId) {
     if (!chatId) {
-        console.log('No chat ID provided to loadChat');
+
         return;
     }
     
-    // Add stack trace to see where loadChat is being called from
-    console.log('loadChat called with:', chatId);
-    console.log('Call stack:', new Error().stack);
-    console.log('isCreatingNewChat flag:', window.isCreatingNewChat);
-    
+
     // Clear the creating flag when manually loading a chat
     if (window.isCreatingNewChat) {
-        console.log('Clearing isCreatingNewChat flag for manual chat load');
+      
         window.isCreatingNewChat = false;
     }
     
     try {
-        console.log('Loading chat:', chatId);
+      
         // Set current chat ID
         currentChatId = chatId;
         
@@ -3114,20 +3018,16 @@ async function loadChat(chatId) {
         }
         
         try {
-            // Get chat data
-            console.log('Getting chat data for:', chatId);
+          
             const chat = await getChat(chatId);
             
             if (chat) {
-                console.log('Chat data retrieved:', chat);
-                // Get messages from the subcollection
-                console.log('Getting messages for chat:', chatId);
+
                 const messages = await getChatMessages(chatId);
-                console.log('Messages retrieved:', messages.length, 'messages');
-                
+    
                 // Add system welcome message if no messages
                 if (messages.length === 0) {
-                    console.log('No messages found, adding welcome message');
+
                     addMessage("Hello! I'm NumAI, How can I help you today?", 'system');
                 } else {
                     // Add messages from chat history and rebuild chat history array
@@ -3177,7 +3077,7 @@ Follow these strict behavioral and formatting rules:
                         let decodedContent = msg.content;
                         if (msg.content.includes('&lt;') || msg.content.includes('&gt;') || msg.content.includes('&amp;')) {
                             decodedContent = decodeHtmlEntities(msg.content);
-                            console.log('Decoded HTML entities in content');
+                        
                         }
                         
                         // Add message to the UI
@@ -3192,8 +3092,7 @@ Follow these strict behavioral and formatting rules:
                             });
                         }
                     });
-                    
-                    console.log('Restored chat history:', chatHistory);
+
                 }
                 
                 // Save chat and messages to localStorage for offline access
@@ -3204,15 +3103,13 @@ Follow these strict behavioral and formatting rules:
                         modelId: currentModel, // Save the current model ID
                         timestamp: new Date().getTime()
                     }));
-                    console.log('Chat data saved to localStorage for offline access');
                 } catch (e) {
                     console.warn('Failed to save chat data to localStorage:', e);
                 }
             }
         } catch (error) {
             console.error('Error fetching chat from Firestore:', error);
-            console.log('Attempting to load chat from localStorage...');
-            
+
             // Try to load from localStorage if available
             try {
                 const savedChatData = localStorage.getItem('currentChatData');
@@ -3224,11 +3121,11 @@ Follow these strict behavioral and formatting rules:
                     // Restore the model ID if it was saved
                     if (parsedData.modelId) {
                         currentModel = parsedData.modelId;
-                        console.log('Restored model ID from localStorage:', currentModel);
+                       
                     }
                     
                     if (chat && chat.id === chatId) {
-                        console.log('Loading chat from localStorage cache');
+
                         
                         // Add system welcome message if no messages
                         if (!messages || messages.length === 0) {
@@ -3282,7 +3179,7 @@ Follow these strict behavioral and formatting rules:
                             }
                         });
                         
-                        console.log('Restored chat history from localStorage:', chatHistory);
+                     
                         }
                         
                         // Add offline indicator message
@@ -3330,26 +3227,24 @@ Follow these strict behavioral and formatting rules:
                 const messageContent = messageDiv.querySelector('.message-content');
 
                 if (originalContent) {
-                    console.log('Found original content for message:', originalContent.substring(0, 50) + '...');
 
                     // Check if this message already has a deepthink container
                     const existingDeepthinkContainer = messageContent.querySelector('.deepthink-container');
                     if (existingDeepthinkContainer) {
-                        console.log('Message already has deepthink container, skipping reprocessing');
+
                         return;
                     }
 
                     // Check if this is a deep thinking response
                     if (originalContent.includes('DEEP THINKING BREAKDOWN') || originalContent.includes('THOUGHT PROCESS') || 
                         originalContent.includes('FINAL ANSWER') || originalContent.includes('🤔') || originalContent.includes('💡')) {
-                        console.log('Detected deep thinking content in loaded message, applying deepthink styling');
+                      
                         styleDeepThinkingResponse(messageContent);
                         return; // Skip further reprocessing
                     }
 
                     if (originalContent.includes('```')) {
-                        console.log('Reprocessing code blocks in loaded message using original content');
-                        // Reprocess the original content with parseCodeBlocks
+ // Reprocess the original content with parseCodeBlocks
                         messageContent.innerHTML = parseCodeBlocks(originalContent);
 
                         // Apply syntax highlighting to all code blocks only if hljs is defined
@@ -3379,8 +3274,7 @@ Follow these strict behavioral and formatting rules:
                         }
                     } else if (originalContent.includes('`')) {
                         // Handle inline code if no code blocks
-                        console.log('Processing markdown with inline code');
-                        
+ 
                         // Check if the content contains code blocks
                         if (originalContent.includes('```')) {
                             messageContent.innerHTML = parseCodeBlocks(originalContent);
@@ -3397,7 +3291,7 @@ Follow these strict behavioral and formatting rules:
                         }
                     }
                 } else {
-                    console.log('No original content found for message, applying highlighting only');
+                  
                     // If no original content is available, just apply highlighting
                     if (typeof hljs !== 'undefined') {
                         messageContent.querySelectorAll('pre code').forEach(block => {
@@ -3989,7 +3883,6 @@ if (document.body) {
             }
           }
         } catch (e) {
-          console.log('Error in Emmet abbreviation tracking:', e);
         }
       }
         
@@ -4011,7 +3904,7 @@ if (document.body) {
       function updateCodeMirrorTheme() {
         const appTheme = localStorage.getItem('theme') || 'dark';
         const newEditorTheme = appTheme === 'light' ? 'default' : 'monokai';
-        console.log('Updating CodeMirror theme to:', newEditorTheme, 'based on app theme:', appTheme);
+
         cm.setOption('theme', newEditorTheme);
       }
       
@@ -4618,13 +4511,10 @@ function styleDeepThinkingResponse(messageContent) {
     const originalContent = messageDiv ? messageDiv.getAttribute('data-original-content') : '';
     
     if (!originalContent) {
-        console.log('No original content found, cannot style deep thinking response');
         return;
     }
     
-    console.log('Styling deep thinking response with new deepthink container');
-    console.log('Original content preview:', originalContent.substring(0, 200));
-    
+
     // Parse the content to extract thought process and final answer
     let thoughtProcess = '';
     let finalAnswer = '';
@@ -4664,10 +4554,7 @@ function styleDeepThinkingResponse(messageContent) {
             } else if (finalAnswer.startsWith('FINAL ANSWER')) {
                 finalAnswer = finalAnswer.replace('FINAL ANSWER', '').trim();
             }
-            
-            console.log('Found pattern:', pattern.split);
-            console.log('Thought process length:', thoughtProcess.length);
-            console.log('Final answer length:', finalAnswer.length);
+
             foundPattern = true;
             break;
         }
@@ -4675,8 +4562,7 @@ function styleDeepThinkingResponse(messageContent) {
     
     // If we found both sections and they have content
     if (foundPattern && thoughtProcess && finalAnswer) {
-        console.log('Successfully parsed deep thinking response');
-        
+
         // Parse the content properly for display
         const renderEmojiMarkdown = (text) => {
             if (text.includes('```')) {
@@ -4702,18 +4588,12 @@ function styleDeepThinkingResponse(messageContent) {
         const contentHash = btoa(originalContent.substring(0, 200)).replace(/[^a-zA-Z0-9]/g, '').substring(0, 12);
         const containerId = 'deepthink-' + contentHash;
         
-        console.log('=== styleDeepThinkingResponse DEBUG START ===');
-        console.log('Content hash:', contentHash);
-        console.log('Generated container ID:', containerId);
-        
+
         // Check if there's a saved state for this container
         const savedState = localStorage.getItem(containerId);
         const isCollapsed = savedState === 'collapsed';
         
-        console.log('Saved state from localStorage:', savedState);
-        console.log('Is collapsed:', isCollapsed);
-        console.log('Container will be created with collapsed class:', isCollapsed);
-        
+
         // Create the new deepthink container design
         const styledContent = `
             <div class="deepthink-container ${isCollapsed ? 'collapsed' : ''}" id="${containerId}">
@@ -4744,40 +4624,27 @@ function styleDeepThinkingResponse(messageContent) {
             </div>
         `;
         
-        // Replace the content with the styled version
-        console.log('Replacing messageContent.innerHTML with styled content');
-        console.log('Styled content preview:', styledContent.substring(0, 200));
+
         messageContent.innerHTML = styledContent;
-        
-        // Verify the content was replaced
-        console.log('After replacement, messageContent.innerHTML length:', messageContent.innerHTML.length);
-        
+
         // Restore saved state from localStorage
         const deepthinkContainer = messageContent.querySelector('.deepthink-container');
         if (deepthinkContainer) {
-            console.log('Found deepthink container after replacement');
-            console.log('Container ID:', containerId);
-            console.log('Container element:', deepthinkContainer);
-            console.log('Container classList after creation:', deepthinkContainer.classList.toString());
-            console.log('Initial collapsed state:', isCollapsed);
-            
+
             // If no saved state exists, default to expanded (open)
             if (savedState === null) {
-                console.log('No saved state found, defaulting to expanded');
+
                 deepthinkContainer.classList.remove('collapsed');
-                console.log('ClassList after removing collapsed:', deepthinkContainer.classList.toString());
+             
             } else {
                 console.log('Applied saved state:', savedState);
                 console.log('Final classList:', deepthinkContainer.classList.toString());
             }
         } else {
-            console.log('No deepthink container found after replacement');
+            console.log('-------');
         }
-        
-        console.log('=== styleDeepThinkingResponse DEBUG END ===');
-    } else {
-        console.log('Failed to parse deep thinking response, using fallback approach');
-        
+
+    } else {  
         // Fallback: Check if content contains deep thinking indicators
         const hasDeepThinkingIndicators = originalContent.includes('DEEP THINKING') || 
                                        originalContent.includes('THOUGHT PROCESS') ||
@@ -4862,29 +4729,25 @@ function styleDeepThinkingResponse(messageContent) {
                     </div>
                 `;
                 
-                // Replace the content with the styled version
-                console.log('Replacing messageContent.innerHTML with styled content');
-                console.log('Styled content preview:', styledContent.substring(0, 200));
+
                 messageContent.innerHTML = styledContent;
                 
-                // Verify the content was replaced
-                console.log('After replacement, messageContent.innerHTML length:', messageContent.innerHTML.length);
-                
+
                 // Initially collapse the thought process
                 const deepthinkContainer = messageContent.querySelector('.deepthink-container');
                 if (deepthinkContainer) {
-                    console.log('Found deepthink container after replacement');
+                 
                     // deepthinkContainer.classList.add('collapsed'); // Now open by default
                 } else {
                     console.log('No deepthink container found after replacement');
                 }
             } else {
                 // Last resort: put everything in final answer
-                console.log('Using last resort: putting all content in final answer');
+               
                 styleDeepThinkingResponseFallback(messageContent);
             }
         } else {
-            console.log('No deep thinking indicators found, trying fallback');
+           
             styleDeepThinkingResponseFallback(messageContent);
         }
     }
@@ -4897,12 +4760,11 @@ function styleDeepThinkingResponseFallback(messageContent) {
     const originalContent = messageDiv ? messageDiv.getAttribute('data-original-content') : '';
     
     if (!originalContent) {
-        console.log('No original content found, cannot style deep thinking fallback response');
+        
         return;
     }
     
-    console.log('Styling deep thinking fallback response with new deepthink container');
-    
+
     // Extract the breakdown content
     let breakdown = '';
     const breakdownPatterns = [
@@ -4917,14 +4779,13 @@ function styleDeepThinkingResponseFallback(messageContent) {
     for (const pattern of breakdownPatterns) {
         if (originalContent.includes(pattern)) {
             breakdown = originalContent.replace(pattern, '').trim();
-            console.log('Found breakdown pattern:', pattern);
+       
             break;
         }
     }
     
     if (breakdown) {
-        console.log('Successfully extracted breakdown');
-        
+
         // Parse the content properly for display
         const renderEmojiMarkdown = (text) => {
             if (text.includes('```')) {
@@ -4952,18 +4813,12 @@ function styleDeepThinkingResponseFallback(messageContent) {
         const contentHash = btoa(originalContent.substring(0, 200)).replace(/[^a-zA-Z0-9]/g, '').substring(0, 12);
         const containerId = 'deepthink-' + contentHash;
         
-        console.log('=== styleDeepThinkingResponseFallback DEBUG START ===');
-        console.log('Content hash:', contentHash);
-        console.log('Generated container ID:', containerId);
-        
+
         // Check if there's a saved state for this container
         const savedState = localStorage.getItem(containerId);
         const isCollapsed = savedState === 'collapsed';
         
-        console.log('Saved state from localStorage:', savedState);
-        console.log('Is collapsed:', isCollapsed);
-        console.log('Container will be created with collapsed class:', isCollapsed);
-        
+
         // Create the new deepthink container design
         const styledContent = `
             <div class="deepthink-container ${isCollapsed ? 'collapsed' : ''}" id="${containerId}">
@@ -4990,50 +4845,36 @@ function styleDeepThinkingResponseFallback(messageContent) {
                 </div>
             </div>
         `;
-        
-        // Replace the content with the styled version
-        console.log('Replacing messageContent.innerHTML with styled content');
-        console.log('Styled content preview:', styledContent.substring(0, 200));
+
         messageContent.innerHTML = styledContent;
         
-        // Verify the content was replaced
-        console.log('After replacement, messageContent.innerHTML length:', messageContent.innerHTML.length);
-        
+
         // Restore saved state from localStorage
         const deepthinkContainer = messageContent.querySelector('.deepthink-container');
         if (deepthinkContainer) {
-            console.log('Found deepthink container after replacement (fallback)');
-            console.log('Container ID:', containerId);
-            console.log('Container element:', deepthinkContainer);
-            console.log('Container classList after creation:', deepthinkContainer.classList.toString());
-            console.log('Initial collapsed state:', isCollapsed);
-            
+
             // If no saved state exists, default to expanded (open)
             if (savedState === null) {
-                console.log('No saved state found, defaulting to expanded (fallback)');
+
                 deepthinkContainer.classList.remove('collapsed');
-                console.log('ClassList after removing collapsed:', deepthinkContainer.classList.toString());
+               
             } else {
                 console.log('Applied saved state:', savedState, '(fallback)');
                 console.log('Final classList:', deepthinkContainer.classList.toString());
             }
         } else {
-            console.log('No deepthink container found after replacement (fallback)');
+            console.log('--');
         }
         
-        console.log('=== styleDeepThinkingResponseFallback DEBUG END ===');
+
     } else {
-        console.log('Failed to extract breakdown content');
+        console.log('-----');
     }
 }
 
 // Function to toggle deepthink container visibility
 function toggleDeepThink(container) {
-    console.log('=== toggleDeepThink DEBUG START ===');
-    console.log('toggleDeepThink called with container:', container);
-    console.log('Container element:', container);
-    console.log('Container ID before:', container.id);
-    
+
     // Generate a unique ID for this container if it doesn't have one
     if (!container.id) {
         // Try to get the message content for consistent ID generation
@@ -5042,57 +4883,47 @@ function toggleDeepThink(container) {
         const contentText = messageContent ? messageContent.textContent.substring(0, 200) : '';
         const contentHash = btoa(contentText).replace(/[^a-zA-Z0-9]/g, '').substring(0, 12);
         container.id = 'deepthink-' + contentHash;
-        console.log('Generated new ID for container:', container.id);
+       
     }
     
     const containerId = container.id;
-    console.log('Final Container ID:', containerId);
-    console.log('Current collapsed state:', container.classList.contains('collapsed'));
-    console.log('Current classList:', container.classList.toString());
-    
+
     if (container.classList.contains('collapsed')) {
         // Expand the container
         container.classList.remove('collapsed');
-        console.log('Expanding container - removed collapsed class');
-        console.log('New classList after expand:', container.classList.toString());
-        // Save expanded state to localStorage
+
         const key = containerId;
-        console.log('Saving expanded state with key:', key);
+  
         localStorage.setItem(key, 'expanded');
-        console.log('Saved to localStorage:', key, '= expanded');
-        console.log('localStorage after save:', localStorage.getItem(key));
+    
     } else {
         // Collapse the container
         container.classList.add('collapsed');
-        console.log('Collapsing container - added collapsed class');
-        console.log('New classList after collapse:', container.classList.toString());
-        // Save collapsed state to localStorage
+
         const key = containerId;
-        console.log('Saving collapsed state with key:', key);
+       
         localStorage.setItem(key, 'collapsed');
-        console.log('Saved to localStorage:', key, '= collapsed');
-        console.log('localStorage after save:', localStorage.getItem(key));
+
     }
     
     // Debug: show all deepthink localStorage entries
     const deepthinkKeys = Object.keys(localStorage).filter(key => key.startsWith('deepthink-'));
-    console.log('All deepthink localStorage entries:', deepthinkKeys);
+   
     deepthinkKeys.forEach(key => {
         console.log(`${key}: ${localStorage.getItem(key)}`);
     });
-    
-    console.log('=== toggleDeepThink DEBUG END ===');
+
 }
 
 // Function to check if current model supports deep thinking
 function checkModelDeepThinkingSupport() {
     if (!currentModelInfo) {
-        console.log('No model info available, disabling deep thinking');
+   
         return false;
     }
     
     const supportsDeepThinking = currentModelInfo.supports_deep_thinking === true;
-    console.log(`Model ${currentModelInfo.display_name} deep thinking support:`, supportsDeepThinking);
+   
     return supportsDeepThinking;
 }
 
@@ -5129,14 +4960,14 @@ function updateThinkingToggleButton() {
         } else {
             thinkingToggleBtn.setAttribute('data-tooltip', 'Not supported by current model');
         }
-        console.log('Deep thinking toggle button disabled - model does not support deep thinking');
+
     }
 }
 
 // Setup thinking toggle button
 const thinkingToggleBtn = document.getElementById('thinking-toggle-btn');
 if (thinkingToggleBtn) {
-    console.log('Thinking toggle button found, setting up event listener');
+
     
     // Remove any existing event listeners
     thinkingToggleBtn.replaceWith(thinkingToggleBtn.cloneNode(true));
@@ -5147,11 +4978,11 @@ if (thinkingToggleBtn) {
     // Add new event listener
     freshThinkingToggleBtn.addEventListener('click', (event) => {
         event.stopPropagation();
-        console.log('Thinking toggle button clicked');
+
         
         // Check if model supports deep thinking
         if (!checkModelDeepThinkingSupport()) {
-            console.log('Model does not support deep thinking, ignoring click');
+
             return;
         }
         
@@ -5165,15 +4996,15 @@ if (thinkingToggleBtn) {
         if (deepThinkingMode) {
             freshThinkingToggleBtn.classList.add('active');
             freshThinkingToggleBtn.setAttribute('data-tooltip', 'Deep Thinking: ON (Ctrl+O)');
-            console.log('Deep thinking mode enabled');
+
         } else {
             freshThinkingToggleBtn.classList.remove('active');
             freshThinkingToggleBtn.setAttribute('data-tooltip', 'Deep Thinking: OFF (Ctrl+O)');
-            console.log('Deep thinking mode disabled');
+
         }
     });
 } else {
-    console.log('Thinking toggle button not found');
+    console.log('Thinking');
 }
 
 // Function to start rainbow animation for deepthink header
@@ -5181,7 +5012,6 @@ function startRainbowAnimation(containerId) {
     const rainbowBg = document.getElementById('rainbow-bg-' + containerId);
     if (rainbowBg) {
         rainbowBg.classList.add('active');
-        console.log('Started rainbow animation for container:', containerId);
     }
 }
 
@@ -5190,7 +5020,7 @@ function stopRainbowAnimation(containerId) {
     const rainbowBg = document.getElementById('rainbow-bg-' + containerId);
     if (rainbowBg) {
         rainbowBg.classList.remove('active');
-        console.log('Stopped rainbow animation for container:', containerId);
+ 
     }
 }
 
@@ -5212,10 +5042,10 @@ function createTypingIndicator() {
 
 // Function to show typing indicator
 function showTypingIndicator(messageDiv) {
-    console.log('Showing typing indicator for message div:', messageDiv);
+
     const existingIndicator = document.getElementById('typing-indicator');
     if (existingIndicator) {
-        console.log('Removing existing typing indicator');
+
         existingIndicator.remove();
     }
     
@@ -5225,7 +5055,7 @@ function showTypingIndicator(messageDiv) {
     if (messageContent) {
         messageContent.appendChild(typingIndicator);
         chatMessages.scrollTop = chatMessages.scrollHeight;
-        console.log('Typing indicator added to message content');
+
     } else {
         console.error('Message content not found for typing indicator');
     }
@@ -5235,10 +5065,10 @@ function showTypingIndicator(messageDiv) {
 function hideTypingIndicator() {
     const typingIndicator = document.getElementById('typing-indicator');
     if (typingIndicator) {
-        console.log('Hiding typing indicator');
+
         typingIndicator.remove();
     } else {
-        console.log('No typing indicator found to hide');
+        console.log('No typing');
     }
 }
 
@@ -5258,7 +5088,6 @@ function testTypingIndicator() {
     setTimeout(() => {
         hideTypingIndicator();
         testMessageDiv.remove();
-        console.log('Test completed');
     }, 300);
 }
 
@@ -5266,9 +5095,7 @@ function testTypingIndicator() {
 async function animateTyping(container, content, renderFunction) {
     const chunkSize = 40; // Smaller chunks for smoother animation
     let currentContent = '';
-    
-    console.log('Starting typing animation for container:', container);
-    
+
     // Hide typing indicator when typing starts
     hideTypingIndicator();
     

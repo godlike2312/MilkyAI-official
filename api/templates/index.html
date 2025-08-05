@@ -17,12 +17,11 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/voice-selection.css') }}">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
     <script src="/static/js/highlight-all.min.js"></script>
-    <!-- Firebase SDK -->
+
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.css">
-    <!-- CodeMirror Themes -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/theme/monokai.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/theme/dracula.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/theme/material.min.css">
@@ -30,7 +29,6 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/theme/ayu-dark.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/theme/solarized.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/theme/one-dark.min.css" />
-    <!-- CodeMirror Core -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/meta.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/javascript/javascript.min.js"></script>
@@ -38,10 +36,10 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/xml/xml.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/css/css.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/htmlmixed/htmlmixed.min.js"></script>
-    <!-- Emmet for CodeMirror -->
+
     <script src="https://cdnjs.cloudflare.com/ajax/libs/emmet/2.4.6/emmet.min.js"></script>
     <script src="https://unpkg.com/@emmetio/codemirror-plugin@1.2.0/dist/emmet-codemirror-plugin.js"></script>
-    <!-- Add CodeMirror addons to support Emmet suggestions -->
+
     <link rel="stylesheet"
         href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/hint/show-hint.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/hint/show-hint.min.js"></script>
@@ -77,19 +75,18 @@
                 <div class="new-chat" data-tooltip="New Chat (Ctrl+I)">
                     <svg width="64" height="64" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg"
                         class="sidebar-icon">
-                        <!-- Square background with rounded corners -->
+                    
                         <rect x="8" y="8" width="48" height="48" rx="8" ry="8" fill="none" stroke-width="2" />
 
-                        <!-- Chat bubble outline -->
+    
                         <path
                             d="M20 22H44C46 22 48 24 48 26V38C48 40 46 42 44 42L35 42L32 48L29 42H20C18 42 16 40 16 38V26C16 24 18 22 20 22Z"
                             fill="none" stroke-width="1.5" />
 
-                        <!-- Plus sign -->
                         <line x1="26" y1="32" x2="38" y2="32" stroke-width="1.5" />
                         <line x1="32" y1="26" x2="32" y2="38" stroke-width="1.5" />
 
-                        <!-- Floating stars -->
+   
                         <path d="M14 16l0.5 1.5L16 18l-1.5 0.5L14 20l-0.5-1.5L12 18l1.5-0.5z" fill="none" />
                         <path d="M48 14l0.5 1L49 15.5l-0.5 0.5L48 17l-0.5-1L47 15.5l0.5-0.5z" fill="none" />
                         <path d="M50 46l0.3 0.7L51 47l-0.7 0.3L50 48l-0.3-0.7L49 47l0.7-0.3z" fill="none" />
@@ -103,8 +100,7 @@
                 </div>
             </div>
             <div class="chat-history">
-                <!-- Chat history items will be added here -->
-                <!-- Template for chat item (hidden) -->
+
                 <div id="chat-item-template" style="display: none;">
                     <div class="chat-item" data-id="">
                         <span class="chat-title">Chat Title</span>
@@ -172,7 +168,7 @@
                 <div class="user-input-wrapper modern">
                     <div class="input-cont">
                         <div id="img-cont" class="img-cont">
-                            <!-- Here goes uploaded images by user -->
+                          
                             <div id="image-preview-container" class="image-preview-container" style="display: none;">
                                 <img id="image-preview" src="" alt="Preview" class="image-preview">
                                 <button id="remove-image-btn" class="remove-image-btn" title="Remove image">
@@ -184,7 +180,7 @@
                             <textarea id="user-input" placeholder="Ask me anything..." rows="1"></textarea>
                         </div>
                         <div class="multi-option">
-                            <!-- Here goes model switcher button & image uploading button -->
+               
                             <div class="imag-model">
                                 <button id="image-upload-btn" class="action-btn image-upload-btn"
                                     data-tooltip="Upload Image (Comming Soon)">
@@ -200,10 +196,10 @@
 
                                     <div id="current-model-icon" class="current-model-icon">
                                         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                            <!-- Top arrow (clockwise) -->
+                         
                                             <path d="M12 4C14.5 4 16.75 5 18.25 6.75L19.75 5.25V10H15L17 8C15.75 6.5 14 6 12 6C9 6 6.5 8 6.07 11H4.05C4.54 6.97 7.92 4 12 4Z" fill="currentColor"/>
                                             
-                                            <!-- Bottom arrow (counterclockwise) -->
+                        
                                             <path d="M12 20C9.5 20 7.25 19 5.75 17.25L4.25 18.75V14H9L7 16C8.25 17.5 10 18 12 18C15 18 17.5 16 17.93 13H19.95C19.46 17.03 16.08 20 12 20Z" fill="currentColor"/>
                                           </svg>
                                     </div>
@@ -250,7 +246,6 @@
                             </div>
                         </div>
 
-                        <!-- Coders Models -->
                         <div class="model-category">
                             <h4 class="model-category-title">Reasoning</h4>
                             <div class="model-option" data-model-id="deepseek/deepseek-r1-0528:free">
@@ -287,14 +282,9 @@
         </div>
     </div>
     </div>
-    <!-- Canvas Editor Overlay Container -->
+
     <div id="canvas-editor-container" style="display:none;"></div>
 
-    <!-- Terminal Container is now moved inside canvas-editor-container via JavaScript -->
-
-
-    <!-- Settings Container -->
-    <!-- Settings Container HTML -->
     <div id="settings-container" class="settings-container">
         <div class="settings-header">
             <h2>Settings</h2>
@@ -311,7 +301,7 @@
         </div>
 
         <div class="settings-content">
-            <!-- General Settings Tab -->
+
             <div class="tab-content active" id="general-tab">
                 <div class="settings-section">
                     <h3>Theme</h3>
@@ -339,7 +329,6 @@
                 </div>
             </div>
 
-            <!-- Profile Settings Tab -->
             <div class="tab-content" id="profile-tab">
                 <div class="settings-section">
                     <h3>Account Information</h3>
@@ -353,8 +342,8 @@
                             <div id="profile-email" class="profile-value">Loading...</div>
                         </div>
                         <div class="profile-field">
-                            <label>Account Type</label>
-                            <div id="profile-type" class="profile-value">Standard</div>
+                            <label>Plan</label>
+                            <div id="profile-type" class="profile-value">Free</div>
                         </div>
                     </div>
                 </div>
@@ -382,7 +371,6 @@
                 </div>
             </div>
 
-            <!-- Advanced Settings Tab -->
             <div class="tab-content" id="advanced-tab">
                 <div class="settings-section">
                     <h3><span>Voice</span></h3>
@@ -403,7 +391,6 @@
                 </div>
             </div>
 
-            <!-- About Tab -->
             <div class="tab-content" id="about-tab">
                 <div class="settings-section">
                     <h3>About NumAI</h3>
@@ -420,17 +407,15 @@
         </div>
     </div>
 
-    <!-- Voice Selection Modal -->
     <div id="voice-selection-modal" class="voice-selection-modal">
         <div class="voice-modal-content">
             <button id="close-voice-modal" class="close-modal-btn">&times;</button>
 
 
-            <!-- Voice Bubble Container -->
             <div class="voice-bubble-container">
                 <div class="voice-bubble" id="voiceBubble">
                     <div class="smoke-container" id="smokeContainer">
-                        <!-- Dynamic smoke particles will be generated here -->
+                     
                     </div>
 
                     <div class="additional-smoke">
@@ -442,15 +427,14 @@
                     </div>
 
                     <div class="bubble-content">
-                        <!-- Audio analyzer visualization will be handled by JS -->
+                      
                     </div>
                 </div>
-                <!-- Voice name moved outside the bubble -->
+              
                 <div id="current-voice-name" class="voice-name-display"></div>
             </div>
 
 
-            <!-- Voice Selection Dropdown -->
             <div class="voice-dropdown-container">
                 <div class="voice-new-css">
                     <select id="voice-modal-select" class="voice-select">
@@ -482,7 +466,7 @@
     <script src="{{ url_for('static', filename='js/settings.js') }}"></script>
 
     <script>
-        // Logout functionality
+
         document.getElementById('logout-btn').addEventListener('click', () => {
             firebase.auth().signOut().then(() => {
                 window.location.href = '/login';
@@ -491,10 +475,8 @@
             });
         });
 
-        // Update user name from Firebase and verify token once
         firebase.auth().onAuthStateChanged(user => {
             if (user) {
-                // Verify token once when user logs in
                 verifyTokenOnce();
 
                 const userNameElement = document.getElementById('user-name');
